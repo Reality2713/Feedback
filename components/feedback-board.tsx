@@ -9,8 +9,10 @@ type FeedbackItem = {
   created_at: string;
   title: string;
   description: string;
+  preview?: string;
   status: string | null;
   upvotes: number;
+  attachments?: string[];
 };
 
 type FeedbackBoardProps = {
@@ -118,7 +120,10 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
                 ▲ {item.upvotes}
               </button>
             </div>
-            <p>{item.description.split('\n').slice(-1)[0]}</p>
+            <p>{item.preview || item.description}</p>
+            {item.attachments && item.attachments.length > 0 ? (
+              <p className='board-attachments'>Attachments: {item.attachments.length}</p>
+            ) : null}
           </article>
         ))}
         {!loading && items.length === 0 ? <p className='board-note'>No missions logged yet.</p> : null}

@@ -12,6 +12,7 @@ type FeedbackFormProps = {
 export function FeedbackForm({ userEmail }: FeedbackFormProps) {
   const [state, setState] = useState<SubmitState>('idle');
   const [error, setError] = useState('');
+  const [uploading, setUploading] = useState(false);
   const isAuthenticated = Boolean(userEmail);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -27,9 +28,36 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
       subject: String(formData.get('subject') || ''),
       description: String(formData.get('description') || ''),
       email: String(formData.get('email') || ''),
+      attachments: [] as string[],
     };
 
     try {
+      const files = formData
+        .getAll('attachments')
+        .filter((value): value is File => value instanceof File && value.size > 0)
+        .slice(0, 4);
+
+      if (files.length > 0) {
+        setUploading(true);
+        const uploaded = await Promise.all(
+          files.map(async (file) => {
+            const uploadForm = new FormData();
+            uploadForm.append('file', file);
+            const uploadResponse = await fetch('/api/feedback/upload', {
+              method: 'POST',
+              body: uploadForm,
+            });
+            if (!uploadResponse.ok) {
+              const uploadErr = (await uploadResponse.json()) as { error?: string };
+              throw new Error(uploadErr.error || `Failed to upload ${file.name}`);
+            }
+            const data = (await uploadResponse.json()) as { url: string };
+            return data.url;
+          })
+        );
+        payload.attachments = uploaded;
+      }
+
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -46,6 +74,8 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Transmission failed');
       setState('error');
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -99,9 +129,24 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
         </div>
       )}
 
-      <button id='submit-btn' type='submit' className='pf-button' disabled={state === 'loading'}>
+      <div>
+        <label className='pf-label'>ATTACHMENTS (OPTIONAL, UP TO 4 IMAGES)</label>
+        <input
+          type='file'
+          name='attachments'
+          className='pf-input'
+          accept='image/png,image/jpeg,image/webp,image/gif'
+          multiple
+        />
+      </div>
+
+      <button id='submit-btn' type='submit' className='pf-button' disabled={state === 'loading' || uploading}>
         <span>
-          {state === 'loading' ? 'TRANSMITTING...' : state === 'success' ? 'TRANSMISSION_SUCCESS' : 'TRANSMIT_REPORT'}
+          {state === 'loading' || uploading
+            ? 'TRANSMITTING...'
+            : state === 'success'
+              ? 'TRANSMISSION_SUCCESS'
+              : 'TRANSMIT_REPORT'}
         </span>
         <span>→</span>
       </button>

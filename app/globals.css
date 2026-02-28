@@ -352,6 +352,13 @@ body {
   line-height: 1.4;
 }
 
+.board-attachments {
+  margin-top: 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
 .vote-button {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: transparent;

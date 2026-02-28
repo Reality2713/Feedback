@@ -16,6 +16,8 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `PREFLIGHT_PROJECT_SLUG` (optional, defaults to `preflight`)
+- `SUPABASE_STORAGE_BUCKET` (optional, defaults to `feedback-attachments`)
+- `MAX_ATTACHMENT_MB` (optional, defaults to `8`)
 
 ## Next milestones
 

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createSupabaseAdminClient } from '@/lib/supabase-admin';
 import { parseSort, sortFeedback } from '@/lib/feedback';
+import { buildFeedbackContent, parseFeedbackContent } from '@/lib/feedback-content';
 
 type FeedbackPayload = {
   type?: string;
@@ -10,6 +11,7 @@ type FeedbackPayload = {
   subject?: string;
   description?: string;
   email?: string;
+  attachments?: string[];
 };
 
 function widgetEmail(email: string) {
@@ -57,6 +59,10 @@ export async function POST(request: Request) {
   if (!body?.subject || !body?.description) {
     return NextResponse.json({ error: 'subject and description are required.' }, { status: 400 });
   }
+  const attachments = (body.attachments || [])
+    .map((url) => String(url || '').trim())
+    .filter((url) => url.startsWith('http://') || url.startsWith('https://'))
+    .slice(0, 4);
 
   const authEmail = await getAuthenticatedEmail().catch(() => null);
   const submittedEmail = (body.email || '').trim();
@@ -109,7 +115,12 @@ export async function POST(request: Request) {
     userId = createdProfile.id;
   }
 
-  const content = [`Type: ${body.type || 'FEATURE_REQUEST'}`, `Priority: ${body.priority || 'MEDIUM'}`, '', body.description].join('\n');
+  const content = buildFeedbackContent(
+    body.type || 'FEATURE_REQUEST',
+    body.priority || 'MEDIUM',
+    body.description,
+    attachments
+  );
 
   const { error: insertError } = await supabase.from('feedback').insert({
     title: body.subject,
@@ -157,6 +168,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error?.message || 'Failed to load feedback.' }, { status: 500 });
   }
 
-  const rows = data.map((row) => ({ ...row, upvotes: Number(row.upvotes || 0) }));
+  const rows = data.map((row) => {
+    const parsed = parseFeedbackContent(row.description || '');
+    return {
+      ...row,
+      upvotes: Number(row.upvotes || 0),
+      description: parsed.body || row.description,
+      preview: parsed.preview,
+      attachments: parsed.attachments,
+    };
+  });
   return NextResponse.json({ items: sortFeedback(rows, sort), sort }, { status: 200 });
 }
