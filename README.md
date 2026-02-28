@@ -8,16 +8,18 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 - Create a clean Next.js app-router foundation.
 - Add a working feedback submit endpoint to Supabase.
 - Add a live feedback board with sort modes and upvoting.
+- Add auth flow scaffold (magic link + OAuth + callback + protected dashboard).
 
 ## Required env vars
 
 - `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `PREFLIGHT_PROJECT_SLUG` (optional, defaults to `preflight`)
 
 ## Next milestones
 
-1. Auth (magic link + OAuth) with protected dashboard routes.
+1. Replace auth scaffold with final production UX and provider settings.
 2. Rich text feedback composer + image attachments.
 3. Cloudflare R2 attachment pipeline (signed uploads + metadata).
 4. Kanban and roadmap modules.

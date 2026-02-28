@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { FeedbackForm } from '@/components/feedback-form';
 import { FeedbackBoard } from '@/components/feedback-board';
 
@@ -47,10 +48,15 @@ export default function HomePage() {
                   <p>Voting, roadmap, and kanban flows will be available in authenticated app mode.</p>
                 </div>
               </div>
-              <a href='#' className='pf-button invert'>
+              <Link href='/dashboard' className='pf-button invert'>
                 <span>ACCESS_ROADMAP_BOARD</span>
                 <span>→</span>
-              </a>
+              </Link>
+              <div className='home-auth-links'>
+                <Link href='/auth/login'>Login</Link>
+                <span>·</span>
+                <Link href='/auth/signup'>Register</Link>
+              </div>
             </div>
             <FeedbackBoard />
           </div>
