@@ -16,15 +16,15 @@ export function ProfileMenu({ email }: ProfileMenuProps) {
 
   return (
     <details className='profile-menu'>
-      <summary className='profile-trigger'>
+      <summary className='profile-trigger' aria-label='Open profile menu'>
         <span className='profile-dot' />
         <span>{email}</span>
       </summary>
-      <div className='profile-panel'>
-        <Link href='/dashboard' className='profile-link'>
+      <div className='profile-panel' role='menu' aria-label='Profile actions'>
+        <Link href='/dashboard' className='profile-link' role='menuitem'>
           Dashboard
         </Link>
-        <button type='button' className='profile-link' onClick={signOut}>
+        <button type='button' className='profile-link' role='menuitem' onClick={signOut}>
           Sign out
         </button>
       </div>

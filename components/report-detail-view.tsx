@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -29,6 +29,7 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [voted, setVoted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const lightboxCloseRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -74,6 +75,11 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
         window.removeEventListener('keydown', onEscape);
       };
     }
+  }, [lightboxUrl]);
+
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    window.setTimeout(() => lightboxCloseRef.current?.focus(), 0);
   }, [lightboxUrl]);
 
   async function upvote() {
@@ -182,6 +188,14 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
 
       {lightboxUrl ? (
         <div className='board-lightbox' role='dialog' aria-modal='true' aria-label='Attachment preview' onClick={() => setLightboxUrl(null)}>
+          <button
+            ref={lightboxCloseRef}
+            type='button'
+            className='lightbox-close'
+            aria-label='Close attachment preview'
+            onClick={() => setLightboxUrl(null)}>
+            CLOSE
+          </button>
           <img src={lightboxUrl} alt='Feedback attachment full size' className='board-lightbox-image' />
         </div>
       ) : null}

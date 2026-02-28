@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -58,6 +58,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [copied, setCopied] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [activeDialogId, setActiveDialogId] = useState('');
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   async function loadFeedback(currentSort: SortMode, currentStatus: StatusFilter, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
@@ -208,7 +209,8 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
     }
   }
 
-  function openItem(item: FeedbackItem) {
+  function openItem(item: FeedbackItem, trigger?: HTMLElement) {
+    returnFocusRef.current = trigger ?? null;
     setActiveItem(item);
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
@@ -219,6 +221,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   function closeItem() {
     setActiveItem(null);
     setCopied(false);
+    if (returnFocusRef.current) setTimeout(() => returnFocusRef.current?.focus(), 0);
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
     url.searchParams.delete('report');
@@ -246,6 +249,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
               key={value}
               type='button'
               className={`sort-tab ${sort === value ? 'active' : ''}`}
+              aria-pressed={sort === value}
               onClick={() => setSort(value)}>
               {value.toUpperCase()}
             </button>
@@ -259,6 +263,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
               key={filter.value}
               type='button'
               className={`sort-tab ${statusFilter === filter.value ? 'active' : ''}`}
+              aria-pressed={statusFilter === filter.value}
               onClick={() => setStatusFilter(filter.value)}>
               {filter.label}
             </button>
@@ -284,7 +289,11 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
         {visibleItems.map((item) => (
           <article key={item.id} className='board-item'>
             <div className='board-item-head'>
-              <button type='button' className='board-open' onClick={() => openItem(item)}>
+              <button
+                type='button'
+                className='board-open'
+                onClick={(event) => openItem(item, event.currentTarget)}
+                aria-label={`Open full report ${item.title}`}>
                 <h4>{item.title}</h4>
               </button>
               <button
@@ -388,6 +397,13 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
       {mounted && lightboxUrl
         ? createPortal(
             <div className='board-lightbox' role='dialog' aria-modal='true' aria-label='Attachment preview' onClick={() => setLightboxUrl(null)}>
+              <button
+                type='button'
+                className='lightbox-close'
+                aria-label='Close attachment preview'
+                onClick={() => setLightboxUrl(null)}>
+                CLOSE
+              </button>
               <img src={lightboxUrl} alt='Feedback attachment full size' className='board-lightbox-image' />
             </div>,
             document.body

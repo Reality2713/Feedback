@@ -76,7 +76,7 @@ export function RoadmapBoard({ mode = 'compact' }: RoadmapBoardProps) {
     : items;
 
   return (
-    <section className='pf-card roadmap-card'>
+    <section className='pf-card roadmap-card' aria-label='Roadmap board'>
       <div className='board-header'>
         <h3>ROADMAP</h3>
       </div>
@@ -102,7 +102,7 @@ export function RoadmapBoard({ mode = 'compact' }: RoadmapBoardProps) {
           const laneItems = filteredItems.filter((item) => item.status === lane.key);
           return (
             <div key={lane.key} className='roadmap-lane'>
-              <p className='roadmap-lane-title'>{lane.label}</p>
+              <h4 className='roadmap-lane-title'>{lane.label}</h4>
               <div className='roadmap-lane-items'>
                 {laneItems.map((item) =>
                   mode === 'full' ? (
