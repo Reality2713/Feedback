@@ -7,6 +7,15 @@ create table if not exists public.feedback_comments (
   body text not null
 );
 
+alter table public.feedback_comments
+  add column if not exists author_email text;
+
+alter table public.feedback_comments
+  add column if not exists author_role text not null default 'user';
+
+alter table public.feedback_comments
+  add column if not exists body text;
+
 create index if not exists feedback_comments_feedback_id_idx on public.feedback_comments(feedback_id);
 create index if not exists feedback_comments_created_at_idx on public.feedback_comments(created_at desc);
 
