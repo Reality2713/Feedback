@@ -9,6 +9,17 @@ type CommentPayload = {
   email?: string;
 };
 
+function isSchemaMissingError(message: string | undefined) {
+  const text = String(message || '').toLowerCase();
+  return (
+    text.includes('relation "feedback_comments" does not exist') ||
+    text.includes("table 'feedback_comments'") ||
+    text.includes('column "author_email" does not exist') ||
+    text.includes('column "author_role" does not exist') ||
+    text.includes('column "body" does not exist')
+  );
+}
+
 function normalizeRole(email: string | null | undefined) {
   return isAdminEmail(email) ? 'admin' : 'user';
 }
@@ -49,7 +60,7 @@ export async function GET(_request: Request, context: { params: { id: string } }
     .order('created_at', { ascending: true });
 
   if (error) {
-    if (error.message.includes('feedback_comments')) {
+    if (isSchemaMissingError(error.message)) {
       return NextResponse.json(
         { error: 'Comments schema missing. Run supabase/migrations/20260228_feedback_comments.sql first.' },
         { status: 500 }
@@ -117,7 +128,7 @@ export async function POST(request: Request, context: { params: { id: string } }
     .single();
 
   if (commentError || !created) {
-    if (commentError?.message?.includes('feedback_comments')) {
+    if (isSchemaMissingError(commentError?.message)) {
       return NextResponse.json(
         { error: 'Comments schema missing. Run supabase/migrations/20260228_feedback_comments.sql first.' },
         { status: 500 }
