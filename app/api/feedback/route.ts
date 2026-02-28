@@ -175,6 +175,8 @@ export async function GET(request: Request) {
       upvotes: Number(row.upvotes || 0),
       description: parsed.body || row.description,
       preview: parsed.preview,
+      type: parsed.type,
+      priority: parsed.priority,
       attachments: parsed.attachments,
     };
   });

@@ -10,6 +10,8 @@ type FeedbackItem = {
   title: string;
   description: string;
   preview?: string;
+  type?: string;
+  priority?: string;
   status: string | null;
   upvotes: number;
   attachments?: string[];
@@ -28,6 +30,7 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
   const [error, setError] = useState('');
   const [voting, setVoting] = useState<Record<string, boolean>>({});
   const [voted, setVoted] = useState<string[]>([]);
+  const [activeItem, setActiveItem] = useState<FeedbackItem | null>(null);
 
   async function loadFeedback(currentSort: SortMode, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
@@ -124,12 +127,17 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
         {items.map((item) => (
           <article key={item.id} className='board-item'>
             <div className='board-item-head'>
-              <h4>{item.title}</h4>
+              <button type='button' className='board-open' onClick={() => setActiveItem(item)}>
+                <h4>{item.title}</h4>
+              </button>
               <button
                 type='button'
                 className='vote-button'
                 disabled={Boolean(voting[item.id]) || votedIds.has(item.id)}
-                onClick={() => upvote(item.id)}>
+                onClick={(event) => {
+                  event.stopPropagation();
+                  upvote(item.id);
+                }}>
                 ▲ {item.upvotes}
               </button>
             </div>
@@ -141,6 +149,35 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
         ))}
         {!loading && items.length === 0 ? <p className='board-note'>No missions logged yet.</p> : null}
       </div>
+
+      {activeItem ? (
+        <div className='board-modal-backdrop' onClick={() => setActiveItem(null)}>
+          <div className='board-modal' onClick={(event) => event.stopPropagation()}>
+            <div className='board-modal-head'>
+              <h4>{activeItem.title}</h4>
+              <button type='button' className='modal-close' onClick={() => setActiveItem(null)}>
+                CLOSE
+              </button>
+            </div>
+
+            <p className='board-modal-meta'>
+              {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
+              {activeItem.priority || 'MEDIUM'}
+            </p>
+            <pre className='board-modal-body'>{activeItem.description}</pre>
+
+            {activeItem.attachments && activeItem.attachments.length > 0 ? (
+              <div className='board-gallery'>
+                {activeItem.attachments.map((url) => (
+                  <a key={url} href={url} target='_blank' rel='noreferrer' className='board-gallery-link'>
+                    <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
+                  </a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
