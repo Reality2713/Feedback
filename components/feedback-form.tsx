@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
+import type { ChangeEvent, DragEvent as ReactDragEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -33,6 +33,7 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
   const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
   const attachmentsRef = useRef<SelectedAttachment[]>([]);
@@ -74,14 +75,23 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
     };
   }, []);
 
-  function onAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || []).slice(0, 4);
-    const onlyImages = files.filter((file) => file.type.startsWith('image/'));
+  function applyAttachmentFiles(files: File[]) {
+    const limited = files.slice(0, 4);
+    const onlyImages = limited.filter((file) => file.type.startsWith('image/'));
+    if (onlyImages.length === 0) {
+      setError('Only image attachments are supported.');
+      setState('error');
+      return;
+    }
+    if (onlyImages.length !== limited.length) {
+      setError('Some dropped files were ignored because they are not images.');
+      setState('error');
+    }
+
     const tooLarge = onlyImages.find((file) => file.size > MAX_CLIENT_ATTACHMENT_MB * 1024 * 1024);
     if (tooLarge) {
       setError(`Attachment ${tooLarge.name} exceeds ${MAX_CLIENT_ATTACHMENT_MB}MB.`);
       setState('error');
-      event.currentTarget.value = '';
       return;
     }
 
@@ -94,8 +104,44 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
         status: 'ready' as const,
       }));
     });
-    setError('');
-    setState('idle');
+    if (onlyImages.length === limited.length) {
+      setError('');
+      setState('idle');
+    }
+  }
+
+  function onAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
+    applyAttachmentFiles(Array.from(event.target.files || []));
+    event.currentTarget.value = '';
+  }
+
+  function hasDraggedFiles(event: ReactDragEvent<HTMLElement>) {
+    return Array.from(event.dataTransfer.types).includes('Files');
+  }
+
+  function onFormDragOver(event: ReactDragEvent<HTMLElement>) {
+    if (!hasDraggedFiles(event)) return;
+    event.preventDefault();
+    setDragActive(true);
+  }
+
+  function onFormDragLeave(event: ReactDragEvent<HTMLElement>) {
+    if (!hasDraggedFiles(event)) return;
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setDragActive(false);
+    }
+  }
+
+  function onFormDrop(event: ReactDragEvent<HTMLElement>) {
+    if (!hasDraggedFiles(event)) return;
+    event.preventDefault();
+    setDragActive(false);
+    const files = Array.from(event.dataTransfer.files || []);
+    if (files.length === 0) return;
+    applyAttachmentFiles(files);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   }
 
   function removeAttachment(index: number) {
@@ -235,7 +281,14 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
   }
 
   return (
-    <form id='feedback-form' className='pf-card form-grid' onSubmit={onSubmit} aria-describedby={messageId}>
+    <form
+      id='feedback-form'
+      className={`pf-card form-grid ${dragActive ? 'drag-active' : ''}`}
+      onSubmit={onSubmit}
+      onDragOverCapture={onFormDragOver}
+      onDragLeaveCapture={onFormDragLeave}
+      onDropCapture={onFormDrop}
+      aria-describedby={messageId}>
       <div className='two-col'>
         <div>
           <label htmlFor={`${uid}-type`} className='pf-label'>
@@ -360,6 +413,14 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
             value={description}
             onChange={(event) => setDescription(event.target.value)}
             onKeyDown={onDescriptionKeyDown}
+            onDragOver={(event) => {
+              if (!hasDraggedFiles(event)) return;
+              event.preventDefault();
+            }}
+            onDrop={(event) => {
+              if (!hasDraggedFiles(event)) return;
+              event.preventDefault();
+            }}
             required
           />
         ) : (
@@ -410,7 +471,7 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
               <article key={item.id} className='attachment-preview'>
                 <img src={item.previewUrl} alt={item.file.name} className='attachment-preview-image' />
                 <div className='attachment-preview-meta'>
-                  <p>{item.file.name}</p>
+                  <p className='attachment-filename'>{item.file.name}</p>
                   <p>{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
                   <p className={`attachment-state ${item.status}`}>{item.status.toUpperCase()}</p>
                   {item.error ? <p className='attachment-error'>{item.error}</p> : null}
