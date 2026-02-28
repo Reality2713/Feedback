@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation';
 import { SignOutButton } from '@/components/sign-out-button';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const supabase = createSupabaseServerClient();
   const {
@@ -26,4 +28,3 @@ export default async function DashboardPage() {
     </main>
   );
 }
-
