@@ -20,6 +20,9 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 - `SUPABASE_STORAGE_BUCKET` (optional, defaults to `feedback-attachments`)
 - `MAX_ATTACHMENT_MB` (optional, defaults to `8`)
 - `ADMIN_EMAILS` (optional, comma-separated list of admin emails for status controls)
+- `APP_BASE_URL` (optional but recommended for email links, e.g. `https://feedback.preflight.reality2713.com`)
+- `RESEND_API_KEY` (optional; enables notification emails)
+- `RESEND_FROM_EMAIL` (optional; required if `RESEND_API_KEY` is set)
 
 ## Next milestones
 
@@ -27,3 +30,9 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 2. Rich text feedback composer + image attachments.
 3. Cloudflare R2 attachment pipeline (signed uploads + metadata).
 4. Kanban and roadmap modules.
+
+## Schema migration for comments
+
+Run this SQL in Supabase SQL Editor before using comments:
+
+- `supabase/migrations/20260228_feedback_comments.sql`

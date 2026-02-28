@@ -17,13 +17,26 @@ type FeedbackItem = {
   attachments?: string[];
 };
 
-type ReportDetailViewProps = {
+type CommentItem = {
   id: string;
+  created_at: string;
+  author_email: string;
+  author_role: 'user' | 'admin' | 'system';
+  body: string;
 };
 
-export function ReportDetailView({ id }: ReportDetailViewProps) {
+type ReportDetailViewProps = {
+  id: string;
+  currentUserEmail?: string | null;
+};
+
+export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailViewProps) {
   const [item, setItem] = useState<FeedbackItem | null>(null);
   const [allItems, setAllItems] = useState<FeedbackItem[]>([]);
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [commentBody, setCommentBody] = useState('');
+  const [commentEmail, setCommentEmail] = useState(currentUserEmail || '');
+  const [commentLoading, setCommentLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -63,6 +76,24 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
     }
 
     load();
+  }, [id]);
+
+  useEffect(() => {
+    setCommentEmail(currentUserEmail || '');
+  }, [currentUserEmail]);
+
+  useEffect(() => {
+    async function loadComments() {
+      try {
+        const response = await fetch(`/api/feedback/${id}/comments`, { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = (await response.json()) as { items?: CommentItem[] };
+        setComments(data.items || []);
+      } catch {
+        // keep page usable if comments fail
+      }
+    }
+    loadComments();
   }, [id]);
 
   useEffect(() => {
@@ -106,6 +137,33 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
     await navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function submitComment() {
+    if (!commentBody.trim() || commentLoading) return;
+    setCommentLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/feedback/${id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          body: commentBody.trim(),
+          email: currentUserEmail ? undefined : commentEmail.trim(),
+        }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to post comment');
+      }
+      const data = (await response.json()) as { item: CommentItem };
+      setComments((current) => [...current, data.item]);
+      setCommentBody('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to post comment');
+    } finally {
+      setCommentLoading(false);
+    }
   }
 
   if (loading) {
@@ -185,6 +243,46 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
           </div>
         </div>
       ) : null}
+
+      <section className='report-comments' aria-label='Report comments'>
+        <p className='pf-label'>COMMENTS</p>
+        <div className='report-comments-list'>
+          {comments.length === 0 ? <p className='board-note'>No comments yet.</p> : null}
+          {comments.map((comment) => (
+            <article key={comment.id} className='report-comment'>
+              <div className='report-comment-head'>
+                <span className='meta-chip'>{comment.author_role.toUpperCase()}</span>
+                <span>{comment.author_email}</span>
+                <span>·</span>
+                <time dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time>
+              </div>
+              <p>{comment.body}</p>
+            </article>
+          ))}
+        </div>
+        <div className='report-comment-form'>
+          {currentUserEmail ? null : (
+            <input
+              type='email'
+              className='pf-input'
+              placeholder='your@email.com'
+              value={commentEmail}
+              onChange={(event) => setCommentEmail(event.target.value)}
+            />
+          )}
+          <textarea
+            rows={4}
+            className='pf-input pf-textarea'
+            placeholder='Add a comment...'
+            value={commentBody}
+            onChange={(event) => setCommentBody(event.target.value)}
+          />
+          <button type='button' className='pf-button' disabled={commentLoading} onClick={submitComment}>
+            <span>{commentLoading ? 'POSTING...' : 'POST_COMMENT'}</span>
+            <span>→</span>
+          </button>
+        </div>
+      </section>
 
       {lightboxUrl ? (
         <div className='board-lightbox' role='dialog' aria-modal='true' aria-label='Attachment preview' onClick={() => setLightboxUrl(null)}>

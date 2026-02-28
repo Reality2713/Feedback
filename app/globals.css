@@ -1276,6 +1276,46 @@ summary:focus-visible {
   line-height: 1.35;
 }
 
+.report-comments {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.report-comments-list {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.report-comment {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.report-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 0.38rem;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  opacity: 0.82;
+}
+
+.report-comment p {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.report-comment-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
 @media (max-width: 960px) {
   .pf-spine {
     display: none;

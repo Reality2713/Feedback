@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase-admin';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { isAdminEmail } from '@/lib/admin';
 import { normalizeStatus } from '@/lib/feedback';
+import { normalizeProfileEmail, notifyFeedbackStatusChanged } from '@/lib/feedback-notifications';
 
 type StatusPayload = {
   status?: string;
@@ -17,11 +18,13 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     return NextResponse.json({ error: 'Invalid status.' }, { status: 400 });
   }
 
+  let actorEmail: string | null = null;
   try {
     const supabaseSession = createSupabaseServerClient();
     const {
       data: { user },
     } = await supabaseSession.auth.getUser();
+    actorEmail = user?.email ?? null;
     if (!isAdminEmail(user?.email)) {
       return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
     }
@@ -47,6 +50,17 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     return NextResponse.json({ error: 'Target project was not found.' }, { status: 404 });
   }
 
+  const { data: feedbackRow, error: feedbackError } = await supabase
+    .from('feedback')
+    .select('id, title, status, user_id')
+    .eq('id', context.params.id)
+    .eq('project_id', project.id)
+    .single();
+
+  if (feedbackError || !feedbackRow) {
+    return NextResponse.json({ error: 'Feedback not found.' }, { status: 404 });
+  }
+
   const { error: updateError } = await supabase
     .from('feedback')
     .update({ status: nextStatus })
@@ -55,6 +69,24 @@ export async function PATCH(request: Request, context: { params: { id: string } 
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', feedbackRow.user_id)
+    .single();
+
+  const recipient = normalizeProfileEmail(profile?.email);
+  if (recipient && recipient !== normalizeProfileEmail(actorEmail)) {
+    void notifyFeedbackStatusChanged({
+      toEmail: recipient,
+      feedbackId: feedbackRow.id,
+      feedbackTitle: feedbackRow.title,
+      previousStatus: feedbackRow.status,
+      nextStatus,
+      actorEmail,
+    });
   }
 
   return NextResponse.json({ success: true, status: nextStatus }, { status: 200 });
