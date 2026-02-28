@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 type SortMode = 'new' | 'popular' | 'trending';
 
@@ -39,6 +40,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [voted, setVoted] = useState<string[]>([]);
   const [activeItem, setActiveItem] = useState<FeedbackItem | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   async function loadFeedback(currentSort: SortMode, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
@@ -60,6 +62,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    setMounted(true);
     setVoted(JSON.parse(localStorage.getItem('pf_voted_feedback') || '[]') as string[]);
   }, []);
 
@@ -184,52 +187,55 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
         {!loading && items.length === 0 ? <p className='board-note'>No missions logged yet.</p> : null}
       </div>
 
-      {activeItem ? (
-        <div className='board-modal-backdrop' onClick={() => setActiveItem(null)}>
-          <div className='board-modal' onClick={(event) => event.stopPropagation()}>
-            <div className='board-modal-head'>
-              <h4>{activeItem.title}</h4>
-              <button type='button' className='modal-close' onClick={() => setActiveItem(null)}>
-                CLOSE
-              </button>
-            </div>
+      {mounted && activeItem
+        ? createPortal(
+            <div className='board-modal-backdrop' onClick={() => setActiveItem(null)}>
+              <div className='board-modal' onClick={(event) => event.stopPropagation()}>
+                <div className='board-modal-head'>
+                  <h4>{activeItem.title}</h4>
+                  <button type='button' className='modal-close' onClick={() => setActiveItem(null)}>
+                    CLOSE
+                  </button>
+                </div>
 
-            <p className='board-modal-meta'>
-              {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
-              {activeItem.priority || 'MEDIUM'} · {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
-            </p>
+                <p className='board-modal-meta'>
+                  {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
+                  {activeItem.priority || 'MEDIUM'} · {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
+                </p>
 
-            <div className='board-modal-controls'>
-              <div className='board-modal-controls-head'>
-                <label className='pf-label'>WORKFLOW_STATUS</label>
-                {!isAdmin ? <span className='admin-lock'>ADMIN ONLY</span> : null}
+                <div className='board-modal-controls'>
+                  <div className='board-modal-controls-head'>
+                    <label className='pf-label'>WORKFLOW_STATUS</label>
+                    {!isAdmin ? <span className='admin-lock'>ADMIN ONLY</span> : null}
+                  </div>
+                  <select
+                    className='pf-input'
+                    value={activeItem.status || 'open'}
+                    onChange={(event) => updateStatus(activeItem.id, event.target.value)}
+                    disabled={updatingStatus || !isAdmin}>
+                    {STATUSES.map((status) => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <pre className='board-modal-body'>{activeItem.description}</pre>
+
+                {activeItem.attachments && activeItem.attachments.length > 0 ? (
+                  <div className='board-gallery'>
+                    {activeItem.attachments.map((url) => (
+                      <a key={url} href={url} target='_blank' rel='noreferrer' className='board-gallery-link'>
+                        <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
               </div>
-              <select
-                className='pf-input'
-                value={activeItem.status || 'open'}
-                onChange={(event) => updateStatus(activeItem.id, event.target.value)}
-                disabled={updatingStatus || !isAdmin}>
-                {STATUSES.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <pre className='board-modal-body'>{activeItem.description}</pre>
-
-            {activeItem.attachments && activeItem.attachments.length > 0 ? (
-              <div className='board-gallery'>
-                {activeItem.attachments.map((url) => (
-                  <a key={url} href={url} target='_blank' rel='noreferrer' className='board-gallery-link'>
-                    <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
-                  </a>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }
