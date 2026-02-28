@@ -515,6 +515,21 @@ body {
   gap: 0.35rem;
 }
 
+.board-modal-controls-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.admin-lock {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  opacity: 0.8;
+  color: #f1b35b;
+}
+
 .board-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));

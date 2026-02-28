@@ -199,22 +199,23 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
               {activeItem.priority || 'MEDIUM'} · {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
             </p>
 
-            {isAdmin ? (
-              <div className='board-modal-controls'>
+            <div className='board-modal-controls'>
+              <div className='board-modal-controls-head'>
                 <label className='pf-label'>WORKFLOW_STATUS</label>
-                <select
-                  className='pf-input'
-                  value={activeItem.status || 'open'}
-                  onChange={(event) => updateStatus(activeItem.id, event.target.value)}
-                  disabled={updatingStatus}>
-                  {STATUSES.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
+                {!isAdmin ? <span className='admin-lock'>ADMIN ONLY</span> : null}
               </div>
-            ) : null}
+              <select
+                className='pf-input'
+                value={activeItem.status || 'open'}
+                onChange={(event) => updateStatus(activeItem.id, event.target.value)}
+                disabled={updatingStatus || !isAdmin}>
+                {STATUSES.map((status) => (
+                  <option key={status.value} value={status.value}>
+                    {status.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <pre className='board-modal-body'>{activeItem.description}</pre>
 
             {activeItem.attachments && activeItem.attachments.length > 0 ? (
