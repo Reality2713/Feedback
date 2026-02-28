@@ -976,6 +976,12 @@ body {
   gap: 0.7rem;
 }
 
+.report-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .report-title {
   margin: 0;
   font-family: var(--font-display);
@@ -990,6 +996,64 @@ body {
 
 .report-body {
   min-height: 260px;
+  padding: 1rem;
+}
+
+.report-body h1 {
+  font-size: 2rem;
+}
+
+.report-body h2 {
+  font-size: 1.5rem;
+}
+
+.report-body h3 {
+  font-size: 1.18rem;
+}
+
+.report-body h1,
+.report-body h2,
+.report-body h3,
+.report-body p,
+.report-body ul,
+.report-body ol,
+.report-body table,
+.report-body pre,
+.report-body blockquote {
+  margin-top: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.report-related {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.report-related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.report-related-item {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.6rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.report-related-item h4 {
+  margin: 0;
+  font-size: 0.92rem;
+  font-family: var(--font-label);
+}
+
+.report-related-item p {
+  margin: 0.38rem 0 0 0;
+  font-size: 0.76rem;
+  opacity: 0.76;
+  line-height: 1.35;
 }
 
 @media (max-width: 960px) {
@@ -1024,5 +1088,9 @@ body {
 
   .dashboard-refresh {
     width: 100%;
+  }
+
+  .report-related-grid {
+    grid-template-columns: 1fr;
   }
 }

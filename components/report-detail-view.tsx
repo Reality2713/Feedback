@@ -23,10 +23,12 @@ type ReportDetailViewProps = {
 
 export function ReportDetailView({ id }: ReportDetailViewProps) {
   const [item, setItem] = useState<FeedbackItem | null>(null);
+  const [allItems, setAllItems] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [voted, setVoted] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -45,7 +47,9 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
           throw new Error(data.error || 'Failed to load report');
         }
         const data = (await response.json()) as { items: FeedbackItem[] };
-        const target = (data.items || []).find((entry) => entry.id === id);
+        const entries = data.items || [];
+        setAllItems(entries);
+        const target = entries.find((entry) => entry.id === id);
         if (!target) {
           throw new Error('Report not found.');
         }
@@ -91,6 +95,13 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
     }
   }
 
+  async function copyLink() {
+    if (typeof window === 'undefined') return;
+    await navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
   if (loading) {
     return <p className='board-note'>Loading report details...</p>;
   }
@@ -108,15 +119,22 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
 
   if (!item) return null;
 
+  const related = allItems.filter((entry) => entry.id !== item.id).slice(0, 3);
+
   return (
     <section className='pf-card report-shell'>
       <div className='report-head'>
         <Link href='/' className='modal-close report-back'>
           BACK
         </Link>
-        <button type='button' className='vote-button' disabled={voted} onClick={upvote}>
-          ▲ {item.upvotes}
-        </button>
+        <div className='report-actions'>
+          <button type='button' className='modal-close' onClick={copyLink}>
+            {copied ? 'COPIED' : 'COPY_LINK'}
+          </button>
+          <button type='button' className='vote-button' disabled={voted} onClick={upvote}>
+            ▲ {item.upvotes}
+          </button>
+        </div>
       </div>
 
       <h1 className='report-title'>{item.title}</h1>
@@ -136,6 +154,22 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
               <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
             </button>
           ))}
+        </div>
+      ) : (
+        <p className='board-note'>No attachments on this report.</p>
+      )}
+
+      {related.length > 0 ? (
+        <div className='report-related'>
+          <p className='pf-label'>RELATED_REPORTS</p>
+          <div className='report-related-grid'>
+            {related.map((entry) => (
+              <Link key={entry.id} href={`/report/${entry.id}`} className='report-related-item'>
+                <h4>{entry.title}</h4>
+                <p>{entry.description.split('\n').find((line) => line.trim()) || 'No details.'}</p>
+              </Link>
+            ))}
+          </div>
         </div>
       ) : null}
 
