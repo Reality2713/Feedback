@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 type SortMode = 'new' | 'popular' | 'trending';
+type StatusFilter = 'all' | 'open' | 'planned' | 'in_progress' | 'shipped';
 
 type FeedbackItem = {
   id: string;
@@ -26,6 +27,13 @@ type FeedbackBoardProps = {
 };
 
 const SORTS: SortMode[] = ['new', 'popular', 'trending'];
+const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
+  { value: 'all', label: 'ALL' },
+  { value: 'open', label: 'NEW' },
+  { value: 'planned', label: 'PLANNED' },
+  { value: 'in_progress', label: 'IN_PROGRESS' },
+  { value: 'shipped', label: 'SHIPPED' },
+];
 const STATUSES = [
   { value: 'open', label: 'NEW' },
   { value: 'planned', label: 'PLANNED' },
@@ -36,6 +44,8 @@ const STATUSES = [
 export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [sort, setSort] = useState<SortMode>('new');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [voting, setVoting] = useState<Record<string, boolean>>({});
@@ -44,11 +54,16 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  async function loadFeedback(currentSort: SortMode, onSuccess?: (items: FeedbackItem[]) => void) {
+  async function loadFeedback(currentSort: SortMode, currentStatus: StatusFilter, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`/api/feedback?sort=${currentSort}`, { cache: 'no-store' });
+      const query = new URLSearchParams({ sort: currentSort });
+      if (currentStatus !== 'all') {
+        query.set('status', currentStatus);
+      }
+
+      const response = await fetch(`/api/feedback?${query.toString()}`, { cache: 'no-store' });
       if (!response.ok) {
         const data = (await response.json()) as { error?: string };
         throw new Error(data.error || 'Failed to load feedback');
@@ -70,26 +85,51 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
   useEffect(() => {
     let cancelled = false;
-    loadFeedback(sort, (nextItems) => {
+    loadFeedback(sort, statusFilter, (nextItems) => {
       if (!cancelled) setItems(nextItems);
     });
     return () => {
       cancelled = true;
     };
-  }, [sort]);
+  }, [sort, statusFilter]);
 
   useEffect(() => {
     function onCreated() {
-      loadFeedback(sort, (nextItems) => setItems(nextItems));
+      loadFeedback(sort, statusFilter, (nextItems) => setItems(nextItems));
     }
 
     window.addEventListener('feedback:created', onCreated);
     return () => {
       window.removeEventListener('feedback:created', onCreated);
     };
-  }, [sort]);
+  }, [sort, statusFilter]);
+
+  useEffect(() => {
+    function onEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setActiveItem(null);
+    }
+
+    if (activeItem) {
+      window.addEventListener('keydown', onEscape);
+      return () => {
+        window.removeEventListener('keydown', onEscape);
+      };
+    }
+  }, [activeItem]);
 
   const votedIds = useMemo(() => new Set(voted), [voted]);
+  const visibleItems = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return items;
+
+    return items.filter((item) => {
+      const haystack = [item.title, item.preview, item.description, item.source]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [items, searchTerm]);
 
   async function upvote(id: string) {
     if (votedIds.has(id)) return;
@@ -158,12 +198,32 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
           ))}
         </div>
       </div>
+      <div className='board-tools'>
+        <div className='status-tabs'>
+          {STATUS_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type='button'
+              className={`sort-tab ${statusFilter === filter.value ? 'active' : ''}`}
+              onClick={() => setStatusFilter(filter.value)}>
+              {filter.label}
+            </button>
+          ))}
+        </div>
+        <input
+          type='search'
+          className='pf-input board-search'
+          placeholder='Search reports...'
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+        />
+      </div>
 
       {loading ? <p className='board-note'>Loading feedback stream...</p> : null}
       {error ? <p className='pf-error'>{error}</p> : null}
 
       <div className='board-list'>
-        {items.map((item) => (
+        {visibleItems.map((item) => (
           <article key={item.id} className='board-item'>
             <div className='board-item-head'>
               <button type='button' className='board-open' onClick={() => setActiveItem(item)}>
@@ -186,7 +246,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
             ) : null}
           </article>
         ))}
-        {!loading && items.length === 0 ? <p className='board-note'>No missions logged yet.</p> : null}
+        {!loading && visibleItems.length === 0 ? <p className='board-note'>No missions matched your filters.</p> : null}
       </div>
 
       {mounted && activeItem

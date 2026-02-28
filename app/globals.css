@@ -352,6 +352,21 @@ body {
   flex-wrap: wrap;
 }
 
+.status-tabs {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.board-tools {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.board-search {
+  max-width: 320px;
+}
+
 .sort-tab {
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: transparent;
@@ -426,6 +441,48 @@ body {
   font-family: var(--font-mono);
   font-size: 0.68rem;
   opacity: 0.85;
+}
+
+.attachment-preview-grid {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.55rem;
+}
+
+.attachment-preview {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.45rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.attachment-preview-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.attachment-preview-meta p {
+  margin: 0;
+  font-size: 0.62rem;
+  opacity: 0.82;
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachment-remove {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
 }
 
 .vote-button {

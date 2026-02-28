@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import type { FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -9,11 +9,49 @@ type FeedbackFormProps = {
   userEmail?: string | null;
 };
 
+type SelectedAttachment = {
+  file: File;
+  previewUrl: string;
+};
+
 export function FeedbackForm({ userEmail }: FeedbackFormProps) {
   const [state, setState] = useState<SubmitState>('idle');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const attachmentsRef = useRef<SelectedAttachment[]>([]);
   const isAuthenticated = Boolean(userEmail);
+
+  useEffect(() => {
+    attachmentsRef.current = selectedAttachments;
+  }, [selectedAttachments]);
+
+  useEffect(() => {
+    return () => {
+      attachmentsRef.current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+    };
+  }, []);
+
+  function onAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || [])
+      .filter((file) => file.type.startsWith('image/'))
+      .slice(0, 4);
+
+    setSelectedAttachments((current) => {
+      current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+      return files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+    });
+  }
+
+  function removeAttachment(index: number) {
+    setSelectedAttachments((current) => {
+      const next = [...current];
+      const removed = next.splice(index, 1)[0];
+      if (removed) URL.revokeObjectURL(removed.previewUrl);
+      return next;
+    });
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,10 +72,7 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
     };
 
     try {
-      const files = formData
-        .getAll('attachments')
-        .filter((value): value is File => value instanceof File && value.size > 0)
-        .slice(0, 4);
+      const files = selectedAttachments.map((item) => item.file);
 
       if (files.length > 0) {
         setUploading(true);
@@ -73,6 +108,13 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
 
       setState('success');
       formEl.reset();
+      setSelectedAttachments((current) => {
+        current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
+        return [];
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('feedback:created'));
       }
@@ -161,12 +203,30 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
       <div>
         <label className='pf-label'>ATTACHMENTS (OPTIONAL, UP TO 4 IMAGES)</label>
         <input
+          ref={fileInputRef}
           type='file'
           name='attachments'
           className='pf-input'
           accept='image/png,image/jpeg,image/webp,image/gif'
           multiple
+          onChange={onAttachmentSelection}
         />
+        {selectedAttachments.length > 0 ? (
+          <div className='attachment-preview-grid'>
+            {selectedAttachments.map((item, index) => (
+              <article key={`${item.file.name}-${index}`} className='attachment-preview'>
+                <img src={item.previewUrl} alt={item.file.name} className='attachment-preview-image' />
+                <div className='attachment-preview-meta'>
+                  <p>{item.file.name}</p>
+                  <p>{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                </div>
+                <button type='button' className='attachment-remove' onClick={() => removeAttachment(index)}>
+                  REMOVE
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <button id='submit-btn' type='submit' className='pf-button' disabled={state === 'loading' || uploading}>
