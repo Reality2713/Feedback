@@ -449,6 +449,29 @@ summary:focus-visible {
   margin-bottom: 0.5rem;
 }
 
+.composer-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.55rem;
+}
+
+.tool-btn {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 0.3rem 0.45rem;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  min-height: 2.1rem;
+  cursor: pointer;
+}
+
+.tool-btn:hover {
+  border-color: rgba(239, 120, 22, 0.75);
+  color: #fff;
+}
+
 .board-search {
   max-width: 320px;
 }
@@ -582,6 +605,40 @@ summary:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.attachment-state {
+  display: inline-block;
+  margin-top: 0.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.1rem 0.3rem;
+  letter-spacing: 0.06em;
+}
+
+.attachment-state.ready {
+  opacity: 0.8;
+}
+
+.attachment-state.uploading {
+  border-color: rgba(239, 120, 22, 0.8);
+  color: #f9c086;
+}
+
+.attachment-state.uploaded {
+  border-color: rgba(61, 170, 84, 0.85);
+  color: #93d8a3;
+}
+
+.attachment-state.error {
+  border-color: rgba(200, 16, 32, 0.85);
+  color: #ff919d;
+}
+
+.attachment-error {
+  margin-top: 0.15rem;
+  color: #ff919d;
+  opacity: 1;
+  white-space: normal;
 }
 
 .attachment-remove {
@@ -1304,7 +1361,8 @@ summary:focus-visible {
   .modal-close,
   .sort-tab,
   .vote-button,
-  .profile-trigger {
+  .profile-trigger,
+  .tool-btn {
     font-size: 16px;
   }
 

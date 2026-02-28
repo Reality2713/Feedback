@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import type { ChangeEvent, FormEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -14,11 +14,15 @@ type FeedbackFormProps = {
 };
 
 type SelectedAttachment = {
+  id: string;
   file: File;
   previewUrl: string;
+  status: 'ready' | 'uploading' | 'uploaded' | 'error';
+  error?: string;
 };
 
 const DRAFT_KEY = 'pf_feedback_draft_v1';
+const MAX_CLIENT_ATTACHMENT_MB = 8;
 
 export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) {
   const uid = useId();
@@ -30,6 +34,7 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
   const [description, setDescription] = useState('');
   const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement | null>(null);
   const attachmentsRef = useRef<SelectedAttachment[]>([]);
   const isAuthenticated = Boolean(userEmail);
   const messageId = `${uid}-submit-message`;
@@ -70,14 +75,27 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
   }, []);
 
   function onAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files || [])
-      .filter((file) => file.type.startsWith('image/'))
-      .slice(0, 4);
+    const files = Array.from(event.target.files || []).slice(0, 4);
+    const onlyImages = files.filter((file) => file.type.startsWith('image/'));
+    const tooLarge = onlyImages.find((file) => file.size > MAX_CLIENT_ATTACHMENT_MB * 1024 * 1024);
+    if (tooLarge) {
+      setError(`Attachment ${tooLarge.name} exceeds ${MAX_CLIENT_ATTACHMENT_MB}MB.`);
+      setState('error');
+      event.currentTarget.value = '';
+      return;
+    }
 
     setSelectedAttachments((current) => {
       current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-      return files.map((file) => ({ file, previewUrl: URL.createObjectURL(file) }));
+      return onlyImages.map((file) => ({
+        id: `${file.name}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        status: 'ready' as const,
+      }));
     });
+    setError('');
+    setState('idle');
   }
 
   function removeAttachment(index: number) {
@@ -116,26 +134,37 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
     };
 
     try {
-      const files = selectedAttachments.map((item) => item.file);
+      const files = selectedAttachments.map((item) => ({ id: item.id, file: item.file }));
 
       if (files.length > 0) {
         setUploading(true);
-        const uploaded = await Promise.all(
-          files.map(async (file) => {
-            const uploadForm = new FormData();
-            uploadForm.append('file', file);
-            const uploadResponse = await fetch('/api/feedback/upload', {
-              method: 'POST',
-              body: uploadForm,
-            });
-            if (!uploadResponse.ok) {
-              const uploadErr = (await uploadResponse.json()) as { error?: string };
-              throw new Error(uploadErr.error || `Failed to upload ${file.name}`);
-            }
-            const data = (await uploadResponse.json()) as { url: string };
-            return data.url;
-          })
-        );
+        const uploaded: string[] = [];
+        for (const attachment of files) {
+          setSelectedAttachments((current) =>
+            current.map((item) =>
+              item.id === attachment.id ? { ...item, status: 'uploading', error: undefined } : item
+            )
+          );
+          const uploadForm = new FormData();
+          uploadForm.append('file', attachment.file);
+          const uploadResponse = await fetch('/api/feedback/upload', {
+            method: 'POST',
+            body: uploadForm,
+          });
+          if (!uploadResponse.ok) {
+            const uploadErr = (await uploadResponse.json()) as { error?: string };
+            const message = uploadErr.error || `Failed to upload ${attachment.file.name}`;
+            setSelectedAttachments((current) =>
+              current.map((item) => (item.id === attachment.id ? { ...item, status: 'error', error: message } : item))
+            );
+            throw new Error(message);
+          }
+          const data = (await uploadResponse.json()) as { url: string };
+          uploaded.push(data.url);
+          setSelectedAttachments((current) =>
+            current.map((item) => (item.id === attachment.id ? { ...item, status: 'uploaded' } : item))
+          );
+        }
         payload.attachments = uploaded;
       }
 
@@ -173,6 +202,35 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
       setState('error');
     } finally {
       setUploading(false);
+    }
+  }
+
+  function insertMarkdown(before: string, after = '') {
+    const textarea = descriptionRef.current;
+    const start = textarea?.selectionStart ?? description.length;
+    const end = textarea?.selectionEnd ?? description.length;
+    const selected = description.slice(start, end);
+    const insertion = `${before}${selected || 'text'}${after}`;
+    const next = `${description.slice(0, start)}${insertion}${description.slice(end)}`;
+    setDescription(next);
+    setBodyTab('write');
+    window.setTimeout(() => {
+      if (!textarea) return;
+      textarea.focus();
+      const cursor = start + insertion.length;
+      textarea.setSelectionRange(cursor, cursor);
+    }, 0);
+  }
+
+  function onDescriptionKeyDown(event: ReactKeyboardEvent<HTMLTextAreaElement>) {
+    if (!(event.metaKey || event.ctrlKey)) return;
+    if (event.key.toLowerCase() === 'b') {
+      event.preventDefault();
+      insertMarkdown('**', '**');
+    }
+    if (event.key.toLowerCase() === 'i') {
+      event.preventDefault();
+      insertMarkdown('*', '*');
     }
   }
 
@@ -253,6 +311,26 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
         <label htmlFor={`${uid}-description`} className='pf-label'>
           DETAILED_SPECIFICATION
         </label>
+        <div className='composer-toolbar' aria-label='Markdown formatting tools'>
+          <button type='button' className='tool-btn' onClick={() => insertMarkdown('**', '**')}>
+            Bold
+          </button>
+          <button type='button' className='tool-btn' onClick={() => insertMarkdown('*', '*')}>
+            Italic
+          </button>
+          <button type='button' className='tool-btn' onClick={() => insertMarkdown('`', '`')}>
+            Code
+          </button>
+          <button type='button' className='tool-btn' onClick={() => insertMarkdown('\n- ', '')}>
+            List
+          </button>
+          <button type='button' className='tool-btn' onClick={() => insertMarkdown('[text](', ')')}>
+            Link
+          </button>
+          <button type='button' className='tool-btn' onClick={() => insertMarkdown('\n| header | value |\n| --- | --- |\n| cell | cell |\n')}>
+            Table
+          </button>
+        </div>
         <div className='composer-tabs'>
           <button
             type='button'
@@ -274,12 +352,14 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
         {bodyTab === 'write' ? (
           <textarea
             id={`${uid}-description`}
+            ref={descriptionRef}
             name='description'
             rows={8}
             placeholder='PROVIDE TECHNICAL CONTEXT OR STEPS TO REPRODUCE...'
             className='pf-input pf-textarea'
             value={description}
             onChange={(event) => setDescription(event.target.value)}
+            onKeyDown={onDescriptionKeyDown}
             required
           />
         ) : (
@@ -291,7 +371,7 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
             )}
           </div>
         )}
-        <p className='board-note'>Markdown supported: headings, lists, links, code, tables.</p>
+        <p className='board-note'>Markdown supported: headings, lists, links, code, tables. Shortcuts: Ctrl/Cmd+B, Ctrl/Cmd+I.</p>
       </div>
 
       {isAuthenticated ? (
@@ -327,16 +407,19 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
         {selectedAttachments.length > 0 ? (
           <div className='attachment-preview-grid'>
             {selectedAttachments.map((item, index) => (
-              <article key={`${item.file.name}-${index}`} className='attachment-preview'>
+              <article key={item.id} className='attachment-preview'>
                 <img src={item.previewUrl} alt={item.file.name} className='attachment-preview-image' />
                 <div className='attachment-preview-meta'>
                   <p>{item.file.name}</p>
                   <p>{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                  <p className={`attachment-state ${item.status}`}>{item.status.toUpperCase()}</p>
+                  {item.error ? <p className='attachment-error'>{item.error}</p> : null}
                 </div>
                 <button
                   type='button'
                   className='attachment-remove'
                   aria-label={`Remove attachment ${item.file.name}`}
+                  disabled={item.status === 'uploading'}
                   onClick={() => removeAttachment(index)}>
                   REMOVE
                 </button>
