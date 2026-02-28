@@ -1,0 +1,270 @@
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans+Extra+Condensed:wght@900&family=Fira+Sans+Condensed:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --pf-blue: #1878b8;
+  --pf-space: #060810;
+  --pf-orange: #ef7816;
+  --pf-cream: #f0e8d0;
+  --pf-green: #3daa54;
+  --pf-red: #c81020;
+  --font-display: 'Fira Sans Extra Condensed', sans-serif;
+  --font-label: 'Fira Sans Condensed', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --spine-w: 80px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  background: var(--pf-space);
+  color: var(--pf-cream);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+.pf-spine {
+  width: var(--spine-w);
+  background: rgba(255, 255, 255, 0.02);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.pf-logo {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: grid;
+  place-content: center;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.spine-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  opacity: 0.35;
+}
+
+.spine-meta span {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.6rem;
+  letter-spacing: 0.22em;
+  font-family: var(--font-mono);
+}
+
+.pf-main {
+  flex: 1;
+  max-width: 1400px;
+  padding: clamp(1.5rem, 5vw, 5rem);
+}
+
+.pf-grid-header {
+  border-left: 4px solid var(--pf-orange);
+  padding-left: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.pf-brick {
+  display: inline-block;
+  background: var(--pf-orange);
+  color: white;
+  font-family: var(--font-display);
+  padding: 0.2rem 0.7rem;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.hero-title {
+  margin: 0;
+  line-height: 0.9;
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 8vw, 5rem);
+}
+
+.hero-meta {
+  margin-top: 1.1rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  opacity: 0.6;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: clamp(1.2rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.section-title {
+  margin: 0 0 1.5rem 0;
+  font-size: 2rem;
+  font-family: var(--font-display);
+}
+
+.pf-card {
+  position: relative;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.pf-label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  opacity: 0.55;
+  font-family: var(--font-mono);
+}
+
+.pf-input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  padding: 0.8rem;
+  font-family: var(--font-mono);
+  font-size: 0.88rem;
+}
+
+.pf-input:focus {
+  outline: none;
+  border-color: var(--pf-orange);
+}
+
+.pf-textarea {
+  resize: vertical;
+}
+
+.pf-button {
+  width: 100%;
+  border: none;
+  background: var(--pf-orange);
+  color: white;
+  cursor: pointer;
+  padding: 1rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pf-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pf-button.invert {
+  background: white;
+  color: var(--pf-space);
+  text-decoration: none;
+}
+
+.pf-success {
+  margin: 0;
+  color: var(--pf-green);
+  font-size: 0.85rem;
+}
+
+.pf-error {
+  margin: 0;
+  color: var(--pf-red);
+  font-size: 0.85rem;
+}
+
+.status-card {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.status-pill {
+  justify-self: end;
+  opacity: 0.6;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+}
+
+.status-title {
+  margin: 0;
+  line-height: 0.9;
+  font-size: 2.4rem;
+  font-family: var(--font-display);
+}
+
+.status-copy {
+  display: grid;
+  gap: 1rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.status-note {
+  border-left: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(0, 0, 0, 0.25);
+  padding: 1rem;
+}
+
+.status-note p {
+  margin: 0;
+}
+
+.status-note p:first-child {
+  margin-bottom: 0.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+
+@media (max-width: 960px) {
+  .pf-spine {
+    display: none;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
