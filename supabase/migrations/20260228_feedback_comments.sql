@@ -16,6 +16,23 @@ alter table public.feedback_comments
 alter table public.feedback_comments
   add column if not exists body text;
 
+alter table public.feedback_comments
+  add column if not exists content text;
+
+update public.feedback_comments
+set content = coalesce(content, body, '')
+where content is null or content = '';
+
+alter table public.feedback_comments
+  alter column content set default '';
+
+update public.feedback_comments
+set body = coalesce(body, content, '')
+where body is null or body = '';
+
+alter table public.feedback_comments
+  alter column body set default '';
+
 create index if not exists feedback_comments_feedback_id_idx on public.feedback_comments(feedback_id);
 create index if not exists feedback_comments_created_at_idx on public.feedback_comments(created_at desc);
 

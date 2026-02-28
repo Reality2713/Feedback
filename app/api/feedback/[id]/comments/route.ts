@@ -21,7 +21,8 @@ function isSchemaMissingError(message: string | undefined) {
     text.includes('column "user_id" does not exist') ||
     text.includes('column "author_email" does not exist') ||
     text.includes('column "author_role" does not exist') ||
-    text.includes('column "body" does not exist')
+    text.includes('column "body" does not exist') ||
+    text.includes('column "content" does not exist')
   );
 }
 
@@ -92,7 +93,7 @@ export async function GET(_request: Request, context: { params: { id: string } }
 
   const { data, error } = await supabase
     .from('feedback_comments')
-    .select('id, created_at, author_email, author_role, body')
+    .select('id, created_at, author_email, author_role, body, content')
     .eq('feedback_id', context.params.id)
     .order('created_at', { ascending: true });
 
@@ -106,7 +107,12 @@ export async function GET(_request: Request, context: { params: { id: string } }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ items: data || [] }, { status: 200 });
+  const items = (data || []).map((item) => ({
+    ...item,
+    body: item.body || item.content || '',
+  }));
+
+  return NextResponse.json({ items }, { status: 200 });
 }
 
 export async function POST(request: Request, context: { params: { id: string } }) {
@@ -168,8 +174,9 @@ export async function POST(request: Request, context: { params: { id: string } }
       author_email: actorEmail,
       author_role: normalizeRole(authEmail || submittedEmail),
       body: commentBody,
+      content: commentBody,
     })
-    .select('id, created_at, author_email, author_role, body')
+    .select('id, created_at, author_email, author_role, body, content')
     .single();
 
   if (commentError || !created) {
@@ -198,5 +205,13 @@ export async function POST(request: Request, context: { params: { id: string } }
     });
   }
 
-  return NextResponse.json({ item: created }, { status: 200 });
+  return NextResponse.json(
+    {
+      item: {
+        ...created,
+        body: created.body || created.content || '',
+      },
+    },
+    { status: 200 }
+  );
 }
