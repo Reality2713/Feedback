@@ -299,6 +299,9 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                 <div className='board-modal-head'>
                   <h4>{activeItem.title}</h4>
                   <div className='board-modal-actions'>
+                    <a className='modal-close' href={`/report/${activeItem.id}`}>
+                      OPEN_PAGE
+                    </a>
                     <button type='button' className='modal-close' onClick={copyReportLink}>
                       {copied ? 'COPIED' : 'COPY_LINK'}
                     </button>

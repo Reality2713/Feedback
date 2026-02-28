@@ -956,6 +956,42 @@ body {
   text-decoration-color: rgba(239, 120, 22, 0.8);
 }
 
+.report-page {
+  min-height: 100vh;
+  padding: clamp(1.1rem, 4vw, 3rem);
+  display: grid;
+  place-items: start center;
+}
+
+.report-shell {
+  width: min(980px, 96vw);
+  display: grid;
+  gap: 0.9rem;
+}
+
+.report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.report-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  line-height: 0.95;
+}
+
+.report-back {
+  text-decoration: none;
+  width: fit-content;
+}
+
+.report-body {
+  min-height: 260px;
+}
+
 @media (max-width: 960px) {
   .pf-spine {
     display: none;
