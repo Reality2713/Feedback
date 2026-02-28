@@ -1,9 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
 type RoadmapItem = {
   id: string;
+  created_at: string;
   title: string;
   preview?: string;
   status: 'open' | 'planned' | 'in_progress' | 'shipped';
@@ -20,9 +22,14 @@ const LANES: Lane[] = [
   { key: 'shipped', label: 'SHIPPED' },
 ];
 
-export function RoadmapBoard() {
+type RoadmapBoardProps = {
+  mode?: 'compact' | 'full';
+};
+
+export function RoadmapBoard({ mode = 'compact' }: RoadmapBoardProps) {
   const [items, setItems] = useState<RoadmapItem[]>([]);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   async function loadRoadmap() {
     setError('');
@@ -58,26 +65,55 @@ export function RoadmapBoard() {
     };
   }, []);
 
+  const filteredItems = search.trim()
+    ? items.filter((item) =>
+        [item.title, item.preview]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(search.trim().toLowerCase())
+      )
+    : items;
+
   return (
     <section className='pf-card roadmap-card'>
       <div className='board-header'>
         <h3>ROADMAP</h3>
       </div>
+      {mode === 'full' ? (
+        <div className='roadmap-tools'>
+          <input
+            type='search'
+            className='pf-input board-search'
+            placeholder='Search roadmap...'
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+      ) : null}
       {error ? <p className='pf-error'>{error}</p> : null}
 
       <div className='roadmap-grid'>
         {LANES.map((lane) => {
-          const laneItems = items.filter((item) => item.status === lane.key);
+          const laneItems = filteredItems.filter((item) => item.status === lane.key);
           return (
             <div key={lane.key} className='roadmap-lane'>
               <p className='roadmap-lane-title'>{lane.label}</p>
               <div className='roadmap-lane-items'>
-                {laneItems.map((item) => (
-                  <article key={item.id} className='roadmap-item'>
-                    <h4>{item.title}</h4>
-                    <p>{item.preview || 'No preview available.'}</p>
-                  </article>
-                ))}
+                {laneItems.map((item) =>
+                  mode === 'full' ? (
+                    <Link key={item.id} href={`/report/${item.id}`} className='roadmap-item roadmap-link-item'>
+                      <h4>{item.title}</h4>
+                      <p>{item.preview || 'No preview available.'}</p>
+                      <p className='roadmap-item-date'>{new Date(item.created_at).toLocaleDateString()}</p>
+                    </Link>
+                  ) : (
+                    <article key={item.id} className='roadmap-item'>
+                      <h4>{item.title}</h4>
+                      <p>{item.preview || 'No preview available.'}</p>
+                    </article>
+                  )
+                )}
                 {laneItems.length === 0 ? <p className='board-note'>No items.</p> : null}
               </div>
             </div>

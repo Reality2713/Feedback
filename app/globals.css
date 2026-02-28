@@ -277,6 +277,11 @@ body {
   gap: 0.9rem;
 }
 
+.roadmap-tools {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .roadmap-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -320,6 +325,22 @@ body {
   font-size: 0.75rem;
   line-height: 1.35;
   opacity: 0.75;
+}
+
+.roadmap-link-item {
+  text-decoration: none;
+  color: inherit;
+}
+
+.roadmap-link-item:hover {
+  border-color: rgba(239, 120, 22, 0.7);
+}
+
+.roadmap-item-date {
+  margin-top: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  opacity: 0.6;
 }
 
 .board-card {
@@ -961,6 +982,14 @@ body {
   padding: clamp(1.1rem, 4vw, 3rem);
   display: grid;
   place-items: start center;
+}
+
+.roadmap-page {
+  min-height: 100vh;
+}
+
+.roadmap-page-actions {
+  margin-bottom: 1rem;
 }
 
 .report-shell {

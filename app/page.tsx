@@ -66,11 +66,11 @@ export default async function HomePage() {
                 <p>Reports submitted through this terminal are routed to the Preflight engineering core.</p>
                 <div className='status-note'>
                   <p>[ SYSTEM_ADVISORY ]</p>
-                  <p>Voting, roadmap, and kanban flows will be available in authenticated app mode.</p>
+                  <p>Roadmap progress is now public. Kanban controls remain in authenticated admin mode.</p>
                 </div>
               </div>
-              <Link href='/dashboard' className='pf-button invert'>
-                <span>ACCESS_ROADMAP_BOARD</span>
+              <Link href='/roadmap' className='pf-button invert'>
+                <span>OPEN_PUBLIC_ROADMAP</span>
                 <span>→</span>
               </Link>
               {userEmail ? null : (
