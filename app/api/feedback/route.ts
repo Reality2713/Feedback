@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createSupabaseAdminClient } from '@/lib/supabase-admin';
+import { isAdminEmail } from '@/lib/admin';
 import { normalizeStatus, parseSort, parseStatusFilter, sortFeedback } from '@/lib/feedback';
 import { buildFeedbackContent, parseFeedbackContent } from '@/lib/feedback-content';
 
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
     .slice(0, 4);
 
   const authEmail = await getAuthenticatedEmail().catch(() => null);
+  const isAdmin = isAdminEmail(authEmail);
   const submittedEmail = (body.email || '').trim();
   const effectiveEmail = authEmail || submittedEmail;
   if (!effectiveEmail) {
@@ -120,8 +122,8 @@ export async function POST(request: Request) {
   const content = buildFeedbackContent(
     body.type || 'FEATURE_REQUEST',
     body.priority || 'MEDIUM',
-    body.source || 'web',
-    body.reference || '',
+    isAdmin ? body.source || 'web' : 'web',
+    isAdmin ? body.reference || '' : '',
     body.description,
     attachments
   );
@@ -146,6 +148,8 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const sort = parseSort(requestUrl.searchParams.get('sort'));
   const statusFilter = parseStatusFilter(requestUrl.searchParams.get('status'));
+  const authEmail = await getAuthenticatedEmail().catch(() => null);
+  const isAdmin = isAdminEmail(authEmail);
 
   let supabase;
   try {
@@ -189,8 +193,8 @@ export async function GET(request: Request) {
       preview: parsed.preview,
       type: parsed.type,
       priority: parsed.priority,
-      source: parsed.source,
-      reference: parsed.reference,
+      source: isAdmin ? parsed.source : undefined,
+      reference: isAdmin ? parsed.reference : undefined,
       attachments: parsed.attachments,
     };
   });

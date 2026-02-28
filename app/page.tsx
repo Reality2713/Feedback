@@ -48,7 +48,7 @@ export default async function HomePage() {
         <section className='content-grid'>
           <div className='left-col'>
             <h2 className='section-title'>FILE NEW REPORT</h2>
-            <FeedbackForm userEmail={userEmail} />
+            <FeedbackForm userEmail={userEmail} isAdmin={userIsAdmin} />
           </div>
 
           <div className='right-col'>

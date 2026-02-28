@@ -7,6 +7,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 type FeedbackFormProps = {
   userEmail?: string | null;
+  isAdmin?: boolean;
 };
 
 type SelectedAttachment = {
@@ -14,7 +15,7 @@ type SelectedAttachment = {
   previewUrl: string;
 };
 
-export function FeedbackForm({ userEmail }: FeedbackFormProps) {
+export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) {
   const [state, setState] = useState<SubmitState>('idle');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -153,29 +154,31 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
         <input type='text' name='subject' placeholder='SUMMARY OF OBSERVATION' className='pf-input' required />
       </div>
 
-      <div className='two-col'>
-        <div>
-          <label className='pf-label'>SOURCE_CHANNEL</label>
-          <select name='source' className='pf-input' defaultValue='web'>
-            <option value='web'>WEB_WIDGET</option>
-            <option value='email'>EMAIL</option>
-            <option value='discord'>DISCORD</option>
-            <option value='x_twitter'>X_TWITTER</option>
-            <option value='slack'>SLACK</option>
-            <option value='other'>OTHER</option>
-          </select>
+      {isAdmin ? (
+        <div className='two-col'>
+          <div>
+            <label className='pf-label'>SOURCE_CHANNEL</label>
+            <select name='source' className='pf-input' defaultValue='web'>
+              <option value='web'>WEB_WIDGET</option>
+              <option value='email'>EMAIL</option>
+              <option value='discord'>DISCORD</option>
+              <option value='x_twitter'>X_TWITTER</option>
+              <option value='slack'>SLACK</option>
+              <option value='other'>OTHER</option>
+            </select>
+          </div>
+          <div>
+            <label className='pf-label'>REFERENCE_URL (OPTIONAL)</label>
+            <input
+              type='url'
+              name='reference'
+              placeholder='https://...'
+              className='pf-input'
+              pattern='https?://.*'
+            />
+          </div>
         </div>
-        <div>
-          <label className='pf-label'>REFERENCE_URL (OPTIONAL)</label>
-          <input
-            type='url'
-            name='reference'
-            placeholder='https://...'
-            className='pf-input'
-            pattern='https?://.*'
-          />
-        </div>
-      </div>
+      ) : null}
 
       <div>
         <label className='pf-label'>DETAILED_SPECIFICATION</label>

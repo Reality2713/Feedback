@@ -262,10 +262,10 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
                 <p className='board-modal-meta'>
                   {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
-                  {activeItem.priority || 'MEDIUM'} · {activeItem.source || 'web'} ·{' '}
+                  {activeItem.priority || 'MEDIUM'} {isAdmin ? `· ${activeItem.source || 'web'} ` : ''}·{' '}
                   {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
                 </p>
-                {activeItem.reference ? (
+                {isAdmin && activeItem.reference ? (
                   <a href={activeItem.reference} target='_blank' rel='noreferrer' className='board-reference-link'>
                     SOURCE_REFERENCE ↗
                   </a>
