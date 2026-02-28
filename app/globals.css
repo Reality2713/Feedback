@@ -17,6 +17,7 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .sr-only {
@@ -438,6 +439,7 @@ summary:focus-visible {
   background: transparent;
   color: rgba(255, 255, 255, 0.75);
   padding: 0.3rem 0.6rem;
+  min-height: 2.5rem;
   font-family: var(--font-mono);
   font-size: 0.65rem;
   cursor: pointer;
@@ -558,6 +560,8 @@ summary:focus-visible {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   padding: 0.25rem 0.45rem;
+  min-height: 2.5rem;
+  min-width: 2.5rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -621,7 +625,8 @@ summary:focus-visible {
   color: #fff;
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  padding: 0.4rem 0.6rem;
+  padding: 0.55rem 0.7rem;
+  min-height: 2.5rem;
   cursor: pointer;
 }
 
@@ -1147,12 +1152,20 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .pf-main {
+    padding: clamp(1rem, 4vw, 2rem);
+  }
+
+  .hero-meta {
+    line-height: 1.4;
+  }
+
   .two-col {
     grid-template-columns: 1fr;
   }
 
   .board-list {
-    max-height: 380px;
+    max-height: none;
   }
 
   .roadmap-grid {
@@ -1161,6 +1174,10 @@ summary:focus-visible {
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .status-head {
+    flex-wrap: wrap;
   }
 
   .dashboard-head {
@@ -1176,6 +1193,37 @@ summary:focus-visible {
     grid-template-columns: 1fr;
   }
 
+  .report-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .report-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .board-modal {
+    width: 100%;
+    max-height: none;
+    min-height: calc(100dvh - 1.7rem);
+  }
+
+  .board-modal-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .board-modal-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .board-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .board-modal-backdrop {
     place-items: start center;
     padding-top: 0.85rem;
@@ -1184,6 +1232,78 @@ summary:focus-visible {
   .lightbox-close {
     top: 0.65rem;
     right: 0.65rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .pf-main {
+    padding: 0.85rem;
+  }
+
+  .pf-grid-header {
+    padding-left: 0.8rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .hero-title {
+    font-size: clamp(2.05rem, 14vw, 3rem);
+  }
+
+  .section-title,
+  .status-title {
+    font-size: clamp(1.75rem, 10vw, 2.2rem);
+  }
+
+  .pf-card {
+    padding: 1rem;
+  }
+
+  .pf-input,
+  .pf-button,
+  .modal-close,
+  .sort-tab,
+  .vote-button,
+  .profile-trigger {
+    font-size: 16px;
+  }
+
+  .profile-panel {
+    right: auto;
+    left: 0;
+    min-width: min(220px, 90vw);
+  }
+
+  .board-item {
+    padding: 0.7rem;
+  }
+
+  .board-item-head {
+    align-items: center;
+  }
+
+  .board-modal-backdrop {
+    padding: 0.4rem;
+  }
+
+  .board-modal {
+    padding: 0.9rem;
+    min-height: calc(100dvh - 0.8rem);
+  }
+
+  .board-modal-head h4 {
+    font-size: clamp(1.5rem, 10vw, 2rem);
+  }
+
+  .board-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .roadmap-lane {
+    min-height: 120px;
+  }
+
+  .report-page {
+    padding: 0.65rem;
   }
 }
 
