@@ -13,6 +13,8 @@ type FeedbackItem = {
   preview?: string;
   type?: string;
   priority?: string;
+  source?: string;
+  reference?: string;
   status: string | null;
   upvotes: number;
   attachments?: string[];
@@ -200,8 +202,14 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
                 <p className='board-modal-meta'>
                   {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
-                  {activeItem.priority || 'MEDIUM'} · {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
+                  {activeItem.priority || 'MEDIUM'} · {activeItem.source || 'web'} ·{' '}
+                  {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
                 </p>
+                {activeItem.reference ? (
+                  <a href={activeItem.reference} target='_blank' rel='noreferrer' className='board-reference-link'>
+                    SOURCE_REFERENCE ↗
+                  </a>
+                ) : null}
 
                 <div className='board-modal-controls'>
                   <div className='board-modal-controls-head'>

@@ -502,6 +502,15 @@ body {
   font-size: 0.7rem;
 }
 
+.board-reference-link {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--pf-cream);
+  opacity: 0.88;
+  text-decoration: underline;
+  text-decoration-color: rgba(239, 120, 22, 0.8);
+}
+
 .board-modal-body {
   margin: 0;
   white-space: pre-wrap;
@@ -699,6 +708,12 @@ body {
   gap: 0.8rem;
 }
 
+.dashboard-filters {
+  min-width: 180px;
+  display: grid;
+  gap: 0.3rem;
+}
+
 .dashboard-refresh {
   width: auto;
   min-width: 145px;
@@ -781,6 +796,12 @@ body {
   font-family: var(--font-mono);
   font-size: 0.66rem;
   opacity: 0.7;
+}
+
+.dashboard-ref-link {
+  color: var(--pf-cream);
+  text-decoration: underline;
+  text-decoration-color: rgba(239, 120, 22, 0.8);
 }
 
 @media (max-width: 960px) {

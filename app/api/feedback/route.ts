@@ -8,6 +8,8 @@ import { buildFeedbackContent, parseFeedbackContent } from '@/lib/feedback-conte
 type FeedbackPayload = {
   type?: string;
   priority?: string;
+  source?: string;
+  reference?: string;
   subject?: string;
   description?: string;
   email?: string;
@@ -118,6 +120,8 @@ export async function POST(request: Request) {
   const content = buildFeedbackContent(
     body.type || 'FEATURE_REQUEST',
     body.priority || 'MEDIUM',
+    body.source || 'web',
+    body.reference || '',
     body.description,
     attachments
   );
@@ -185,6 +189,8 @@ export async function GET(request: Request) {
       preview: parsed.preview,
       type: parsed.type,
       priority: parsed.priority,
+      source: parsed.source,
+      reference: parsed.reference,
       attachments: parsed.attachments,
     };
   });

@@ -9,6 +9,7 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 - Add a working feedback submit endpoint to Supabase.
 - Add a live feedback board with sort modes and upvoting.
 - Add auth flow scaffold (magic link + OAuth + callback + protected dashboard).
+- Add source-channel metadata (`web`, `email`, `discord`, etc.) and optional reference URL for multi-channel triage.
 
 ## Required env vars
 

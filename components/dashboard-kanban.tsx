@@ -9,6 +9,8 @@ type FeedbackItem = {
   title: string;
   preview?: string;
   status: WorkflowStatus | null;
+  source?: string;
+  reference?: string;
   upvotes: number;
   created_at: string;
   attachments?: string[];
@@ -42,6 +44,7 @@ export function DashboardKanban({ isAdmin }: DashboardKanbanProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [moving, setMoving] = useState<Record<string, boolean>>({});
+  const [sourceFilter, setSourceFilter] = useState('all');
 
   async function loadItems() {
     setLoading(true);
@@ -79,11 +82,12 @@ export function DashboardKanban({ isAdmin }: DashboardKanbanProps) {
   }, []);
 
   const grouped = useMemo(() => {
+    const filtered = sourceFilter === 'all' ? items : items.filter((item) => (item.source || 'web') === sourceFilter);
     return LANES.map((lane) => ({
       ...lane,
-      items: items.filter((item) => normalizeStatus(item.status) === lane.key),
+      items: filtered.filter((item) => normalizeStatus(item.status) === lane.key),
     }));
-  }, [items]);
+  }, [items, sourceFilter]);
 
   async function moveItem(id: string, status: WorkflowStatus) {
     setMoving((state) => ({ ...state, [id]: true }));
@@ -115,6 +119,18 @@ export function DashboardKanban({ isAdmin }: DashboardKanbanProps) {
           <h2 className='section-title dashboard-title'>KANBAN CONTROL</h2>
           <p className='hero-meta'>Workflow stream for roadmap delivery.</p>
         </div>
+        <div className='dashboard-filters'>
+          <label className='pf-label'>SOURCE_FILTER</label>
+          <select className='pf-input' value={sourceFilter} onChange={(event) => setSourceFilter(event.target.value)}>
+            <option value='all'>ALL</option>
+            <option value='web'>WEB_WIDGET</option>
+            <option value='email'>EMAIL</option>
+            <option value='discord'>DISCORD</option>
+            <option value='x_twitter'>X_TWITTER</option>
+            <option value='slack'>SLACK</option>
+            <option value='other'>OTHER</option>
+          </select>
+        </div>
         <button type='button' className='pf-button dashboard-refresh' onClick={loadItems} disabled={loading}>
           <span>{loading ? 'SYNCING...' : 'REFRESH'}</span>
           <span>↻</span>
@@ -140,7 +156,13 @@ export function DashboardKanban({ isAdmin }: DashboardKanbanProps) {
                   <div className='dashboard-item-meta'>
                     <span>▲ {item.upvotes}</span>
                     <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                    <span>{(item.source || 'web').toUpperCase()}</span>
                     <span>{item.attachments?.length || 0} img</span>
+                    {item.reference ? (
+                      <a href={item.reference} target='_blank' rel='noreferrer' className='dashboard-ref-link'>
+                        ref↗
+                      </a>
+                    ) : null}
                   </div>
                   <select
                     className='pf-input'

@@ -25,6 +25,8 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
     const payload = {
       type: String(formData.get('type') || 'FEATURE_REQUEST'),
       priority: String(formData.get('priority') || 'MEDIUM'),
+      source: String(formData.get('source') || 'web'),
+      reference: String(formData.get('reference') || ''),
       subject: String(formData.get('subject') || ''),
       description: String(formData.get('description') || ''),
       email: String(formData.get('email') || ''),
@@ -107,6 +109,30 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
       <div>
         <label className='pf-label'>SUBJECT_LINE</label>
         <input type='text' name='subject' placeholder='SUMMARY OF OBSERVATION' className='pf-input' required />
+      </div>
+
+      <div className='two-col'>
+        <div>
+          <label className='pf-label'>SOURCE_CHANNEL</label>
+          <select name='source' className='pf-input' defaultValue='web'>
+            <option value='web'>WEB_WIDGET</option>
+            <option value='email'>EMAIL</option>
+            <option value='discord'>DISCORD</option>
+            <option value='x_twitter'>X_TWITTER</option>
+            <option value='slack'>SLACK</option>
+            <option value='other'>OTHER</option>
+          </select>
+        </div>
+        <div>
+          <label className='pf-label'>REFERENCE_URL (OPTIONAL)</label>
+          <input
+            type='url'
+            name='reference'
+            placeholder='https://...'
+            className='pf-input'
+            pattern='https?://.*'
+          />
+        </div>
       </div>
 
       <div>
