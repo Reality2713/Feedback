@@ -1,8 +1,20 @@
 import Link from 'next/link';
 import { FeedbackForm } from '@/components/feedback-form';
 import { FeedbackBoard } from '@/components/feedback-board';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 
-export default function HomePage() {
+export default async function HomePage() {
+  let userEmail: string | null = null;
+  try {
+    const supabase = createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userEmail = user?.email ?? null;
+  } catch {
+    userEmail = null;
+  }
+
   return (
     <>
       <aside className='pf-spine'>
@@ -30,7 +42,7 @@ export default function HomePage() {
         <section className='content-grid'>
           <div className='left-col'>
             <h2 className='section-title'>FILE NEW REPORT</h2>
-            <FeedbackForm />
+            <FeedbackForm userEmail={userEmail} />
           </div>
 
           <div className='right-col'>

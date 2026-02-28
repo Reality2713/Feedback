@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createSupabaseAdminClient } from '@/lib/supabase-admin';
 import { parseSort, sortFeedback } from '@/lib/feedback';
 
@@ -14,10 +16,53 @@ function widgetEmail(email: string) {
   return email.replace('@', '+widget@');
 }
 
+async function getAuthenticatedEmail() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) {
+    return null;
+  }
+
+  const cookieStore = cookies();
+  const supabase = createServerClient(supabaseUrl, anonKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value;
+      },
+      set(name: string, value: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value, ...options });
+        } catch {
+          // No-op in contexts where response cookie mutation is unavailable.
+        }
+      },
+      remove(name: string, options: CookieOptions) {
+        try {
+          cookieStore.set({ name, value: '', ...options });
+        } catch {
+          // No-op in contexts where response cookie mutation is unavailable.
+        }
+      },
+    },
+  });
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user?.email ?? null;
+}
+
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as FeedbackPayload | null;
-  if (!body?.subject || !body?.description || !body?.email) {
-    return NextResponse.json({ error: 'subject, description and email are required.' }, { status: 400 });
+  if (!body?.subject || !body?.description) {
+    return NextResponse.json({ error: 'subject and description are required.' }, { status: 400 });
+  }
+
+  const authEmail = await getAuthenticatedEmail().catch(() => null);
+  const submittedEmail = (body.email || '').trim();
+  const effectiveEmail = authEmail || submittedEmail;
+  if (!effectiveEmail) {
+    return NextResponse.json({ error: 'email is required when unauthenticated.' }, { status: 400 });
   }
 
   const projectSlug = process.env.PREFLIGHT_PROJECT_SLUG || 'preflight';
@@ -38,7 +83,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Target project was not found.' }, { status: 404 });
   }
 
-  const wEmail = widgetEmail(body.email);
+  const wEmail = widgetEmail(effectiveEmail);
   let userId: string | null = null;
 
   const { data: existingProfile } = await supabase
@@ -50,7 +95,7 @@ export async function POST(request: Request) {
   if (existingProfile?.id) {
     userId = existingProfile.id;
   } else {
-    const fullName = body.email.split('@')[0];
+    const fullName = effectiveEmail.split('@')[0];
     const { data: createdProfile, error: createProfileError } = await supabase
       .from('profiles')
       .insert({ email: wEmail, full_name: fullName })

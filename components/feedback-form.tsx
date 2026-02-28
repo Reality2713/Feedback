@@ -5,16 +5,22 @@ import type { FormEvent } from 'react';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
-export function FeedbackForm() {
+type FeedbackFormProps = {
+  userEmail?: string | null;
+};
+
+export function FeedbackForm({ userEmail }: FeedbackFormProps) {
   const [state, setState] = useState<SubmitState>('idle');
   const [error, setError] = useState('');
+  const isAuthenticated = Boolean(userEmail);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setState('loading');
     setError('');
 
-    const formData = new FormData(event.currentTarget);
+    const formEl = event.currentTarget;
+    const formData = new FormData(formEl);
     const payload = {
       type: String(formData.get('type') || 'FEATURE_REQUEST'),
       priority: String(formData.get('priority') || 'MEDIUM'),
@@ -36,7 +42,7 @@ export function FeedbackForm() {
       }
 
       setState('success');
-      event.currentTarget.reset();
+      formEl.reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Transmission failed');
       setState('error');
@@ -81,10 +87,17 @@ export function FeedbackForm() {
         />
       </div>
 
-      <div>
-        <label className='pf-label'>OPERATOR_IDENT (EMAIL)</label>
-        <input type='email' name='email' placeholder='EMAIL@REALITY2713.COM' className='pf-input' required />
-      </div>
+      {isAuthenticated ? (
+        <div>
+          <label className='pf-label'>OPERATOR_IDENT</label>
+          <input type='text' value={userEmail || ''} className='pf-input' disabled readOnly />
+        </div>
+      ) : (
+        <div>
+          <label className='pf-label'>OPERATOR_IDENT (EMAIL)</label>
+          <input type='email' name='email' placeholder='EMAIL@REALITY2713.COM' className='pf-input' required />
+        </div>
+      )}
 
       <button id='submit-btn' type='submit' className='pf-button' disabled={state === 'loading'}>
         <span>
