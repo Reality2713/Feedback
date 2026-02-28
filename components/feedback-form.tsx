@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
+type BodyTab = 'write' | 'preview';
 
 type FeedbackFormProps = {
   userEmail?: string | null;
@@ -15,14 +18,43 @@ type SelectedAttachment = {
   previewUrl: string;
 };
 
+const DRAFT_KEY = 'pf_feedback_draft_v1';
+
 export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) {
   const [state, setState] = useState<SubmitState>('idle');
+  const [bodyTab, setBodyTab] = useState<BodyTab>('write');
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [subject, setSubject] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedAttachments, setSelectedAttachments] = useState<SelectedAttachment[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentsRef = useRef<SelectedAttachment[]>([]);
   const isAuthenticated = Boolean(userEmail);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw) as { subject?: string; description?: string };
+      setSubject(String(draft.subject || ''));
+      setDescription(String(draft.description || ''));
+    } catch {
+      // Ignore invalid draft payload.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(
+      DRAFT_KEY,
+      JSON.stringify({
+        subject,
+        description,
+      })
+    );
+  }, [subject, description]);
 
   useEffect(() => {
     attachmentsRef.current = selectedAttachments;
@@ -61,13 +93,21 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
 
     const formEl = event.currentTarget;
     const formData = new FormData(formEl);
+    const safeSubject = subject.trim();
+    const safeDescription = description.trim();
+    if (!safeSubject || !safeDescription) {
+      setError('Subject and details are required.');
+      setState('error');
+      return;
+    }
+
     const payload = {
       type: String(formData.get('type') || 'FEATURE_REQUEST'),
       priority: String(formData.get('priority') || 'MEDIUM'),
       source: String(formData.get('source') || 'web'),
       reference: String(formData.get('reference') || ''),
-      subject: String(formData.get('subject') || ''),
-      description: String(formData.get('description') || ''),
+      subject: safeSubject,
+      description: safeDescription,
       email: String(formData.get('email') || ''),
       attachments: [] as string[],
     };
@@ -109,6 +149,12 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
 
       setState('success');
       formEl.reset();
+      setSubject('');
+      setDescription('');
+      setBodyTab('write');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(DRAFT_KEY);
+      }
       setSelectedAttachments((current) => {
         current.forEach((item) => URL.revokeObjectURL(item.previewUrl));
         return [];
@@ -151,7 +197,15 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
 
       <div>
         <label className='pf-label'>SUBJECT_LINE</label>
-        <input type='text' name='subject' placeholder='SUMMARY OF OBSERVATION' className='pf-input' required />
+        <input
+          type='text'
+          name='subject'
+          placeholder='SUMMARY OF OBSERVATION'
+          className='pf-input'
+          value={subject}
+          onChange={(event) => setSubject(event.target.value)}
+          required
+        />
       </div>
 
       {isAdmin ? (
@@ -182,13 +236,40 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
 
       <div>
         <label className='pf-label'>DETAILED_SPECIFICATION</label>
-        <textarea
-          name='description'
-          rows={6}
-          placeholder='PROVIDE TECHNICAL CONTEXT OR STEPS TO REPRODUCE...'
-          className='pf-input pf-textarea'
-          required
-        />
+        <div className='composer-tabs'>
+          <button
+            type='button'
+            className={`sort-tab ${bodyTab === 'write' ? 'active' : ''}`}
+            onClick={() => setBodyTab('write')}>
+            WRITE
+          </button>
+          <button
+            type='button'
+            className={`sort-tab ${bodyTab === 'preview' ? 'active' : ''}`}
+            onClick={() => setBodyTab('preview')}>
+            PREVIEW
+          </button>
+        </div>
+        {bodyTab === 'write' ? (
+          <textarea
+            name='description'
+            rows={8}
+            placeholder='PROVIDE TECHNICAL CONTEXT OR STEPS TO REPRODUCE...'
+            className='pf-input pf-textarea'
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            required
+          />
+        ) : (
+          <div className='pf-input markdown-preview'>
+            {description.trim() ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
+            ) : (
+              <p className='board-note'>Nothing to preview yet.</p>
+            )}
+          </div>
+        )}
+        <p className='board-note'>Markdown supported: headings, lists, links, code, tables.</p>
       </div>
 
       {isAuthenticated ? (

@@ -363,6 +363,12 @@ body {
   gap: 0.65rem;
 }
 
+.composer-tabs {
+  display: flex;
+  gap: 0.45rem;
+  margin-bottom: 0.5rem;
+}
+
 .board-search {
   max-width: 320px;
 }
@@ -574,6 +580,68 @@ body {
   font-family: var(--font-body);
   line-height: 1.6;
   font-size: 0.92rem;
+}
+
+.markdown-preview {
+  min-height: 170px;
+  overflow: auto;
+}
+
+.markdown-preview > :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  font-family: var(--font-label);
+  line-height: 1.1;
+}
+
+.markdown-preview p,
+.markdown-preview li {
+  line-height: 1.55;
+}
+
+.markdown-preview code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.08rem 0.3rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+}
+
+.markdown-preview pre {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 0.7rem;
+  overflow: auto;
+}
+
+.markdown-preview pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-preview a {
+  color: var(--pf-cream);
+  text-decoration-color: rgba(239, 120, 22, 0.8);
+}
+
+.markdown-preview table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown-preview th,
+.markdown-preview td {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0.35rem 0.45rem;
+  font-size: 0.8rem;
 }
 
 .board-modal-controls {

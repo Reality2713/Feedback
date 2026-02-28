@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type SortMode = 'new' | 'popular' | 'trending';
 type StatusFilter = 'all' | 'open' | 'planned' | 'in_progress' | 'shipped';
@@ -288,7 +290,9 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                     ))}
                   </select>
                 </div>
-                <pre className='board-modal-body'>{activeItem.description}</pre>
+                <div className='board-modal-body markdown-preview'>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeItem.description}</ReactMarkdown>
+                </div>
 
                 {activeItem.attachments && activeItem.attachments.length > 0 ? (
                   <div className='board-gallery'>
