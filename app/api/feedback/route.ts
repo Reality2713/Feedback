@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createSupabaseAdminClient } from '@/lib/supabase-admin';
+import { parseSort, sortFeedback } from '@/lib/feedback';
 
 type FeedbackPayload = {
   type?: string;
@@ -19,15 +20,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'subject, description and email are required.' }, { status: 400 });
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const projectSlug = process.env.PREFLIGHT_PROJECT_SLUG || 'preflight';
-
-  if (!supabaseUrl || !serviceRole) {
-    return NextResponse.json({ error: 'Server is not configured for Supabase writes.' }, { status: 500 });
+  let supabase;
+  try {
+    supabase = createSupabaseAdminClient();
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Server misconfigured' }, { status: 500 });
   }
-
-  const supabase = createClient(supabaseUrl, serviceRole);
 
   const { data: project, error: projectError } = await supabase
     .from('projects')
@@ -80,4 +79,39 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ success: true }, { status: 200 });
+}
+
+export async function GET(request: Request) {
+  const projectSlug = process.env.PREFLIGHT_PROJECT_SLUG || 'preflight';
+  const requestUrl = new URL(request.url);
+  const sort = parseSort(requestUrl.searchParams.get('sort'));
+
+  let supabase;
+  try {
+    supabase = createSupabaseAdminClient();
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Server misconfigured' }, { status: 500 });
+  }
+
+  const { data: project, error: projectError } = await supabase
+    .from('projects')
+    .select('id')
+    .eq('slug', projectSlug)
+    .single();
+
+  if (projectError || !project) {
+    return NextResponse.json({ error: 'Target project was not found.' }, { status: 404 });
+  }
+
+  const { data, error } = await supabase
+    .from('feedback')
+    .select('id, created_at, title, description, status, upvotes')
+    .eq('project_id', project.id);
+
+  if (error || !data) {
+    return NextResponse.json({ error: error?.message || 'Failed to load feedback.' }, { status: 500 });
+  }
+
+  const rows = data.map((row) => ({ ...row, upvotes: Number(row.upvotes || 0) }));
+  return NextResponse.json({ items: sortFeedback(rows, sort), sort }, { status: 200 });
 }

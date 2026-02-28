@@ -7,6 +7,7 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 - Port visual language from Astro roadmap page.
 - Create a clean Next.js app-router foundation.
 - Add a working feedback submit endpoint to Supabase.
+- Add a live feedback board with sort modes and upvoting.
 
 ## Required env vars
 
@@ -17,6 +18,6 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 ## Next milestones
 
 1. Auth (magic link + OAuth) with protected dashboard routes.
-2. Feedback list with sorting + voting.
+2. Rich text feedback composer + image attachments.
 3. Cloudflare R2 attachment pipeline (signed uploads + metadata).
 4. Kanban and roadmap modules.

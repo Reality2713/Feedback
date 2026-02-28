@@ -1,4 +1,5 @@
 import { FeedbackForm } from '@/components/feedback-form';
+import { FeedbackBoard } from '@/components/feedback-board';
 
 export default function HomePage() {
   return (
@@ -51,6 +52,7 @@ export default function HomePage() {
                 <span>→</span>
               </a>
             </div>
+            <FeedbackBoard />
           </div>
         </section>
       </main>
