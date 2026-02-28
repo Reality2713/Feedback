@@ -70,6 +70,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [copied, setCopied] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [activeDialogId, setActiveDialogId] = useState('');
+  const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
 
   async function loadFeedback(currentSort: SortMode, currentStatus: StatusFilter, onSuccess?: (items: FeedbackItem[]) => void) {
@@ -299,7 +300,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
       <div className='board-list'>
         {visibleItems.map((item) => (
-          <article key={item.id} className='board-item'>
+          <article key={item.id} className={`board-item ${expandedItemId === item.id ? 'expanded' : ''}`}>
             <div className='board-item-head'>
               <button
                 type='button'
@@ -331,6 +332,34 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
             <p>{trimPreview(item)}</p>
             {item.attachments && item.attachments.length > 0 ? (
               <p className='board-attachments'>Attachments: {item.attachments.length}</p>
+            ) : null}
+            <div className='board-item-actions'>
+              <button
+                type='button'
+                className='modal-close board-inline-toggle'
+                aria-expanded={expandedItemId === item.id}
+                onClick={() => setExpandedItemId((current) => (current === item.id ? null : item.id))}>
+                {expandedItemId === item.id ? 'COLLAPSE' : 'QUICK_VIEW'}
+              </button>
+            </div>
+            {expandedItemId === item.id ? (
+              <div className='board-inline-detail markdown-preview' aria-label={`Quick view ${item.title}`}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.description}</ReactMarkdown>
+                {item.attachments && item.attachments.length > 0 ? (
+                  <div className='board-gallery'>
+                    {item.attachments.map((url) => (
+                      <button
+                        key={url}
+                        type='button'
+                        className='board-gallery-link'
+                        aria-label='Open attachment preview'
+                        onClick={() => setLightboxUrl(url)}>
+                        <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ) : null}
           </article>
         ))}

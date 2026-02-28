@@ -511,6 +511,10 @@ summary:focus-visible {
   padding: 0.8rem;
 }
 
+.board-item.expanded {
+  border-color: rgba(239, 120, 22, 0.5);
+}
+
 .board-item-head {
   display: flex;
   align-items: start;
@@ -578,6 +582,26 @@ summary:focus-visible {
   font-family: var(--font-mono);
   font-size: 0.64rem;
   opacity: 0.85;
+}
+
+.board-item-actions {
+  margin-top: 0.5rem;
+}
+
+.board-inline-toggle {
+  font-size: 0.66rem;
+  min-height: 2.1rem;
+}
+
+.board-inline-detail {
+  margin-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 0.55rem;
+  min-height: 0;
+}
+
+.board-inline-detail .board-gallery {
+  margin-top: 0.6rem;
 }
 
 .attachment-preview-grid {
