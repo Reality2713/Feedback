@@ -312,9 +312,28 @@ summary:focus-visible {
   padding-top: 1rem;
 }
 
+.panel-subtitle {
+  margin: 0 0 0.65rem 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.11em;
+  opacity: 0.72;
+}
+
+.pipeline-divider {
+  margin: 1rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
 .roadmap-card {
   display: grid;
   gap: 0.9rem;
+}
+
+.roadmap-card.embedded {
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
 .roadmap-tools {
@@ -502,12 +521,34 @@ summary:focus-visible {
   opacity: 0.75;
   font-size: 0.82rem;
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.board-item-meta {
+  margin-top: 0.45rem;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.meta-chip {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.14rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  opacity: 0.86;
 }
 
 .board-attachments {
-  margin-top: 0.45rem;
+  margin-top: 0.4rem;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   opacity: 0.85;
 }
 
@@ -1283,6 +1324,10 @@ summary:focus-visible {
 
   .board-modal-backdrop {
     padding: 0.4rem;
+  }
+
+  .meta-chip {
+    font-size: 0.66rem;
   }
 
   .board-modal {

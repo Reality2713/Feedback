@@ -24,9 +24,10 @@ const LANES: Lane[] = [
 
 type RoadmapBoardProps = {
   mode?: 'compact' | 'full';
+  embedded?: boolean;
 };
 
-export function RoadmapBoard({ mode = 'compact' }: RoadmapBoardProps) {
+export function RoadmapBoard({ mode = 'compact', embedded = false }: RoadmapBoardProps) {
   const [items, setItems] = useState<RoadmapItem[]>([]);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -75,8 +76,10 @@ export function RoadmapBoard({ mode = 'compact' }: RoadmapBoardProps) {
       )
     : items;
 
+  const wrapperClass = embedded ? 'roadmap-card embedded' : 'pf-card roadmap-card';
+
   return (
-    <section className='pf-card roadmap-card' aria-label='Roadmap board'>
+    <section className={wrapperClass} aria-label='Roadmap board'>
       <div className='board-header'>
         <h3>ROADMAP</h3>
       </div>

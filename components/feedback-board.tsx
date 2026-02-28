@@ -43,6 +43,18 @@ const STATUSES = [
   { value: 'shipped', label: 'SHIPPED' },
 ] as const;
 
+function statusLabel(status: string | null | undefined) {
+  if (status === 'open' || !status) return 'NEW';
+  return status.toUpperCase();
+}
+
+function trimPreview(item: FeedbackItem) {
+  const source = item.preview || item.description;
+  if (!source) return 'No summary provided.';
+  const clean = source.replace(/\s+/g, ' ').trim();
+  return clean.length > 170 ? `${clean.slice(0, 170)}...` : clean;
+}
+
 export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [sort, setSort] = useState<SortMode>('new');
@@ -308,7 +320,15 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                 ▲ {item.upvotes}
               </button>
             </div>
-            <p>{item.preview || item.description}</p>
+            <div className='board-item-meta' aria-label='Report metadata'>
+              <span className='meta-chip'>{statusLabel(item.status)}</span>
+              <span className='meta-chip'>{item.type || 'FEATURE_REQUEST'}</span>
+              <span className='meta-chip'>{item.priority || 'MEDIUM'}</span>
+              <span className='meta-chip'>
+                {new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+              </span>
+            </div>
+            <p>{trimPreview(item)}</p>
             {item.attachments && item.attachments.length > 0 ? (
               <p className='board-attachments'>Attachments: {item.attachments.length}</p>
             ) : null}
@@ -345,7 +365,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                 <p className='board-modal-meta'>
                   {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
                   {activeItem.priority || 'MEDIUM'} {isAdmin ? `· ${activeItem.source || 'web'} ` : ''}·{' '}
-                  {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
+                  {statusLabel(activeItem.status)}
                 </p>
                 {isAdmin && activeItem.reference ? (
                   <a href={activeItem.reference} target='_blank' rel='noreferrer' className='board-reference-link'>

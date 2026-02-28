@@ -66,7 +66,7 @@ export default async function HomePage() {
                 <p>Reports submitted through this terminal are routed to the Preflight engineering core.</p>
                 <div className='status-note'>
                   <p>[ SYSTEM_ADVISORY ]</p>
-                  <p>Roadmap progress is now public. Kanban controls remain in authenticated admin mode.</p>
+                  <p>Feedback intake and roadmap delivery are now in one live mission pipeline.</p>
                 </div>
               </div>
               <Link href='/roadmap' className='pf-button invert'>
@@ -81,10 +81,13 @@ export default async function HomePage() {
                 </div>
               )}
               <div className='status-board-shell'>
+                <p className='panel-subtitle'>LIVE_FEEDBACK</p>
                 <FeedbackBoard embedded isAdmin={userIsAdmin} />
+                <div className='pipeline-divider' />
+                <p className='panel-subtitle'>DELIVERY_ROADMAP</p>
+                <RoadmapBoard embedded />
               </div>
             </div>
-            <RoadmapBoard />
           </div>
         </section>
       </main>
