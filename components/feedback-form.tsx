@@ -71,6 +71,9 @@ export function FeedbackForm({ userEmail }: FeedbackFormProps) {
 
       setState('success');
       formEl.reset();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('feedback:created'));
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Transmission failed');
       setState('error');

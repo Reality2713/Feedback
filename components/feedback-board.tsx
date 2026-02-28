@@ -29,6 +29,24 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
   const [voting, setVoting] = useState<Record<string, boolean>>({});
   const [voted, setVoted] = useState<string[]>([]);
 
+  async function loadFeedback(currentSort: SortMode, onSuccess?: (items: FeedbackItem[]) => void) {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/feedback?sort=${currentSort}`, { cache: 'no-store' });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to load feedback');
+      }
+      const data = (await response.json()) as { items: FeedbackItem[] };
+      onSuccess?.(data.items || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load feedback');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setVoted(JSON.parse(localStorage.getItem('pf_voted_feedback') || '[]') as string[]);
@@ -36,27 +54,22 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError('');
-      try {
-        const response = await fetch(`/api/feedback?sort=${sort}`, { cache: 'no-store' });
-        if (!response.ok) {
-          const data = (await response.json()) as { error?: string };
-          throw new Error(data.error || 'Failed to load feedback');
-        }
-        const data = (await response.json()) as { items: FeedbackItem[] };
-        if (!cancelled) setItems(data.items || []);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load feedback');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
+    loadFeedback(sort, (nextItems) => {
+      if (!cancelled) setItems(nextItems);
+    });
     return () => {
       cancelled = true;
+    };
+  }, [sort]);
+
+  useEffect(() => {
+    function onCreated() {
+      loadFeedback(sort, (nextItems) => setItems(nextItems));
+    }
+
+    window.addEventListener('feedback:created', onCreated);
+    return () => {
+      window.removeEventListener('feedback:created', onCreated);
     };
   }, [sort]);
 
