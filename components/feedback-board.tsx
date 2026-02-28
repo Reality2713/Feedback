@@ -57,6 +57,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [mounted, setMounted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [activeDialogId, setActiveDialogId] = useState('');
 
   async function loadFeedback(currentSort: SortMode, currentStatus: StatusFilter, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
@@ -133,6 +134,16 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
       };
     }
   }, [activeItem, lightboxUrl]);
+
+  useEffect(() => {
+    if (!activeItem) return;
+    const nextId = `report-dialog-${activeItem.id}`;
+    setActiveDialogId(nextId);
+    window.setTimeout(() => {
+      const closeButton = document.getElementById(`${nextId}-close`);
+      closeButton?.focus();
+    }, 0);
+  }, [activeItem]);
 
   const votedIds = useMemo(() => new Set(voted), [voted]);
   const visibleItems = useMemo(() => {
@@ -226,7 +237,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const wrapperClass = embedded ? 'board-card embedded' : 'pf-card board-card';
 
   return (
-    <section className={wrapperClass}>
+    <section className={wrapperClass} aria-label='Mission board'>
       <div className='board-header'>
         <h3>MISSION BOARD</h3>
         <div className='sort-tabs'>
@@ -253,7 +264,11 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
             </button>
           ))}
         </div>
+        <label htmlFor='board-search' className='sr-only'>
+          Search reports
+        </label>
         <input
+          id='board-search'
           type='search'
           className='pf-input board-search'
           placeholder='Search reports...'
@@ -275,6 +290,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
               <button
                 type='button'
                 className='vote-button'
+                aria-label={`Upvote ${item.title}`}
                 disabled={Boolean(voting[item.id]) || votedIds.has(item.id)}
                 onClick={(event) => {
                   event.stopPropagation();
@@ -295,9 +311,15 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
       {mounted && activeItem
         ? createPortal(
             <div className='board-modal-backdrop' onClick={closeItem}>
-              <div className='board-modal' onClick={(event) => event.stopPropagation()}>
+              <div
+                id={activeDialogId}
+                className='board-modal'
+                role='dialog'
+                aria-modal='true'
+                aria-labelledby={`${activeDialogId}-title`}
+                onClick={(event) => event.stopPropagation()}>
                 <div className='board-modal-head'>
-                  <h4>{activeItem.title}</h4>
+                  <h4 id={`${activeDialogId}-title`}>{activeItem.title}</h4>
                   <div className='board-modal-actions'>
                     <a className='modal-close' href={`/report/${activeItem.id}`}>
                       OPEN_PAGE
@@ -305,7 +327,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                     <button type='button' className='modal-close' onClick={copyReportLink}>
                       {copied ? 'COPIED' : 'COPY_LINK'}
                     </button>
-                    <button type='button' className='modal-close' onClick={closeItem}>
+                    <button id={`${activeDialogId}-close`} type='button' className='modal-close' onClick={closeItem}>
                       CLOSE
                     </button>
                   </div>
@@ -346,7 +368,12 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                 {activeItem.attachments && activeItem.attachments.length > 0 ? (
                   <div className='board-gallery'>
                     {activeItem.attachments.map((url) => (
-                      <button key={url} type='button' className='board-gallery-link' onClick={() => setLightboxUrl(url)}>
+                      <button
+                        key={url}
+                        type='button'
+                        className='board-gallery-link'
+                        aria-label='Open attachment preview'
+                        onClick={() => setLightboxUrl(url)}>
                         <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
                       </button>
                     ))}
@@ -360,7 +387,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
       {mounted && lightboxUrl
         ? createPortal(
-            <div className='board-lightbox' onClick={() => setLightboxUrl(null)}>
+            <div className='board-lightbox' role='dialog' aria-modal='true' aria-label='Attachment preview' onClick={() => setLightboxUrl(null)}>
               <img src={lightboxUrl} alt='Feedback attachment full size' className='board-lightbox-image' />
             </div>,
             document.body

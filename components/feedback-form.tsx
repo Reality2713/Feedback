@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -21,6 +21,7 @@ type SelectedAttachment = {
 const DRAFT_KEY = 'pf_feedback_draft_v1';
 
 export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) {
+  const uid = useId();
   const [state, setState] = useState<SubmitState>('idle');
   const [bodyTab, setBodyTab] = useState<BodyTab>('write');
   const [error, setError] = useState('');
@@ -31,6 +32,8 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const attachmentsRef = useRef<SelectedAttachment[]>([]);
   const isAuthenticated = Boolean(userEmail);
+  const messageId = `${uid}-submit-message`;
+  const descriptionPreviewId = `${uid}-description-preview`;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -174,19 +177,23 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
   }
 
   return (
-    <form id='feedback-form' className='pf-card form-grid' onSubmit={onSubmit}>
+    <form id='feedback-form' className='pf-card form-grid' onSubmit={onSubmit} aria-describedby={messageId}>
       <div className='two-col'>
         <div>
-          <label className='pf-label'>REPORT_TYPE</label>
-          <select name='type' className='pf-input'>
+          <label htmlFor={`${uid}-type`} className='pf-label'>
+            REPORT_TYPE
+          </label>
+          <select id={`${uid}-type`} name='type' className='pf-input'>
             <option>FEATURE_REQUEST</option>
             <option>BUG_REPORT</option>
             <option>IMPROVEMENT</option>
           </select>
         </div>
         <div>
-          <label className='pf-label'>SEVERITY</label>
-          <select name='priority' className='pf-input'>
+          <label htmlFor={`${uid}-priority`} className='pf-label'>
+            SEVERITY
+          </label>
+          <select id={`${uid}-priority`} name='priority' className='pf-input'>
             <option>LOW</option>
             <option>MEDIUM</option>
             <option>HIGH</option>
@@ -196,8 +203,11 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
       </div>
 
       <div>
-        <label className='pf-label'>SUBJECT_LINE</label>
+        <label htmlFor={`${uid}-subject`} className='pf-label'>
+          SUBJECT_LINE
+        </label>
         <input
+          id={`${uid}-subject`}
           type='text'
           name='subject'
           placeholder='SUMMARY OF OBSERVATION'
@@ -211,8 +221,10 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
       {isAdmin ? (
         <div className='two-col'>
           <div>
-            <label className='pf-label'>SOURCE_CHANNEL</label>
-            <select name='source' className='pf-input' defaultValue='web'>
+            <label htmlFor={`${uid}-source`} className='pf-label'>
+              SOURCE_CHANNEL
+            </label>
+            <select id={`${uid}-source`} name='source' className='pf-input' defaultValue='web'>
               <option value='web'>WEB_WIDGET</option>
               <option value='email'>EMAIL</option>
               <option value='discord'>DISCORD</option>
@@ -222,8 +234,11 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
             </select>
           </div>
           <div>
-            <label className='pf-label'>REFERENCE_URL (OPTIONAL)</label>
+            <label htmlFor={`${uid}-reference`} className='pf-label'>
+              REFERENCE_URL (OPTIONAL)
+            </label>
             <input
+              id={`${uid}-reference`}
               type='url'
               name='reference'
               placeholder='https://...'
@@ -235,23 +250,30 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
       ) : null}
 
       <div>
-        <label className='pf-label'>DETAILED_SPECIFICATION</label>
+        <label htmlFor={`${uid}-description`} className='pf-label'>
+          DETAILED_SPECIFICATION
+        </label>
         <div className='composer-tabs'>
           <button
             type='button'
             className={`sort-tab ${bodyTab === 'write' ? 'active' : ''}`}
+            aria-pressed={bodyTab === 'write'}
+            aria-controls={descriptionPreviewId}
             onClick={() => setBodyTab('write')}>
             WRITE
           </button>
           <button
             type='button'
             className={`sort-tab ${bodyTab === 'preview' ? 'active' : ''}`}
+            aria-pressed={bodyTab === 'preview'}
+            aria-controls={descriptionPreviewId}
             onClick={() => setBodyTab('preview')}>
             PREVIEW
           </button>
         </div>
         {bodyTab === 'write' ? (
           <textarea
+            id={`${uid}-description`}
             name='description'
             rows={8}
             placeholder='PROVIDE TECHNICAL CONTEXT OR STEPS TO REPRODUCE...'
@@ -261,7 +283,7 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
             required
           />
         ) : (
-          <div className='pf-input markdown-preview'>
+          <div id={descriptionPreviewId} className='pf-input markdown-preview' aria-live='polite'>
             {description.trim() ? (
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
             ) : (
@@ -274,19 +296,26 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
 
       {isAuthenticated ? (
         <div>
-          <label className='pf-label'>OPERATOR_IDENT</label>
-          <input type='text' value={userEmail || ''} className='pf-input' disabled readOnly />
+          <label htmlFor={`${uid}-operator`} className='pf-label'>
+            OPERATOR_IDENT
+          </label>
+          <input id={`${uid}-operator`} type='text' value={userEmail || ''} className='pf-input' disabled readOnly />
         </div>
       ) : (
         <div>
-          <label className='pf-label'>OPERATOR_IDENT (EMAIL)</label>
-          <input type='email' name='email' placeholder='EMAIL@REALITY2713.COM' className='pf-input' required />
+          <label htmlFor={`${uid}-email`} className='pf-label'>
+            OPERATOR_IDENT (EMAIL)
+          </label>
+          <input id={`${uid}-email`} type='email' name='email' placeholder='EMAIL@REALITY2713.COM' className='pf-input' required />
         </div>
       )}
 
       <div>
-        <label className='pf-label'>ATTACHMENTS (OPTIONAL, UP TO 4 IMAGES)</label>
+        <label htmlFor={`${uid}-attachments`} className='pf-label'>
+          ATTACHMENTS (OPTIONAL, UP TO 4 IMAGES)
+        </label>
         <input
+          id={`${uid}-attachments`}
           ref={fileInputRef}
           type='file'
           name='attachments'
@@ -304,7 +333,11 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
                   <p>{item.file.name}</p>
                   <p>{(item.file.size / (1024 * 1024)).toFixed(2)} MB</p>
                 </div>
-                <button type='button' className='attachment-remove' onClick={() => removeAttachment(index)}>
+                <button
+                  type='button'
+                  className='attachment-remove'
+                  aria-label={`Remove attachment ${item.file.name}`}
+                  onClick={() => removeAttachment(index)}>
                   REMOVE
                 </button>
               </article>
@@ -324,8 +357,16 @@ export function FeedbackForm({ userEmail, isAdmin = false }: FeedbackFormProps) 
         <span>→</span>
       </button>
 
-      {state === 'success' ? <p className='pf-success'>Report filed. Mission control received your transmission.</p> : null}
-      {state === 'error' ? <p className='pf-error'>{error}</p> : null}
+      {state === 'success' ? (
+        <p id={messageId} className='pf-success' role='status' aria-live='polite'>
+          Report filed. Mission control received your transmission.
+        </p>
+      ) : null}
+      {state === 'error' ? (
+        <p id={messageId} className='pf-error' role='alert'>
+          {error}
+        </p>
+      ) : null}
     </form>
   );
 }

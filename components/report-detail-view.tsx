@@ -122,7 +122,7 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
   const related = allItems.filter((entry) => entry.id !== item.id).slice(0, 3);
 
   return (
-    <section className='pf-card report-shell'>
+    <section className='pf-card report-shell' aria-labelledby='report-title'>
       <div className='report-head'>
         <Link href='/' className='modal-close report-back'>
           BACK
@@ -131,13 +131,15 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
           <button type='button' className='modal-close' onClick={copyLink}>
             {copied ? 'COPIED' : 'COPY_LINK'}
           </button>
-          <button type='button' className='vote-button' disabled={voted} onClick={upvote}>
+          <button type='button' className='vote-button' aria-label={`Upvote ${item.title}`} disabled={voted} onClick={upvote}>
             ▲ {item.upvotes}
           </button>
         </div>
       </div>
 
-      <h1 className='report-title'>{item.title}</h1>
+      <h1 id='report-title' className='report-title'>
+        {item.title}
+      </h1>
       <p className='board-modal-meta'>
         {new Date(item.created_at).toLocaleString()} · {item.type || 'FEATURE_REQUEST'} · {item.priority || 'MEDIUM'} ·{' '}
         {item.status === 'open' ? 'NEW' : item.status?.toUpperCase()}
@@ -150,7 +152,12 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
       {item.attachments && item.attachments.length > 0 ? (
         <div className='board-gallery'>
           {item.attachments.map((url) => (
-            <button key={url} type='button' className='board-gallery-link' onClick={() => setLightboxUrl(url)}>
+            <button
+              key={url}
+              type='button'
+              className='board-gallery-link'
+              aria-label='Open attachment preview'
+              onClick={() => setLightboxUrl(url)}>
               <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
             </button>
           ))}
@@ -174,7 +181,7 @@ export function ReportDetailView({ id }: ReportDetailViewProps) {
       ) : null}
 
       {lightboxUrl ? (
-        <div className='board-lightbox' onClick={() => setLightboxUrl(null)}>
+        <div className='board-lightbox' role='dialog' aria-modal='true' aria-label='Attachment preview' onClick={() => setLightboxUrl(null)}>
           <img src={lightboxUrl} alt='Feedback attachment full size' className='board-lightbox-image' />
         </div>
       ) : null}

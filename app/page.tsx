@@ -32,7 +32,7 @@ export default async function HomePage() {
         </div>
       </aside>
 
-      <main className='pf-main'>
+      <main id='main-content' className='pf-main'>
         <header className='pf-grid-header'>
           <div className='pf-brick'>PROTOCOL 004 · FEEDBACK TERMINAL</div>
           <h1 className='hero-title'>

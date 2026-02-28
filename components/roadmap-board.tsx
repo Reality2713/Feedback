@@ -82,7 +82,11 @@ export function RoadmapBoard({ mode = 'compact' }: RoadmapBoardProps) {
       </div>
       {mode === 'full' ? (
         <div className='roadmap-tools'>
+          <label htmlFor='roadmap-search' className='sr-only'>
+            Search roadmap
+          </label>
           <input
+            id='roadmap-search'
             type='search'
             className='pf-input board-search'
             placeholder='Search roadmap...'

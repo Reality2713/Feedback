@@ -8,7 +8,7 @@ type ReportPageProps = {
 
 export default function ReportPage({ params }: ReportPageProps) {
   return (
-    <main className='report-page'>
+    <main id='main-content' className='report-page'>
       <ReportDetailView id={params.id} />
     </main>
   );

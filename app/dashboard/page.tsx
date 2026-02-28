@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   const isAdmin = isAdminEmail(user.email);
 
   return (
-    <main className='pf-main dashboard-page'>
+    <main id='main-content' className='pf-main dashboard-page'>
       <header className='pf-grid-header'>
         <div className='pf-brick'>AUTHENTICATED SESSION</div>
         <h1 className='hero-title'>MISSION CONTROL</h1>

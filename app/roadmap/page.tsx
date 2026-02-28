@@ -3,7 +3,7 @@ import { RoadmapBoard } from '@/components/roadmap-board';
 
 export default function RoadmapPage() {
   return (
-    <main className='pf-main roadmap-page'>
+    <main id='main-content' className='pf-main roadmap-page'>
       <header className='pf-grid-header'>
         <div className='pf-brick'>PUBLIC ROADMAP</div>
         <h1 className='hero-title'>
