@@ -9,11 +9,16 @@ type CommentPayload = {
   email?: string;
 };
 
+function widgetEmail(email: string) {
+  return email.replace('@', '+widget@');
+}
+
 function isSchemaMissingError(message: string | undefined) {
   const text = String(message || '').toLowerCase();
   return (
     text.includes('relation "feedback_comments" does not exist') ||
     text.includes("table 'feedback_comments'") ||
+    text.includes('column "user_id" does not exist') ||
     text.includes('column "author_email" does not exist') ||
     text.includes('column "author_role" does not exist') ||
     text.includes('column "body" does not exist')
@@ -22,6 +27,38 @@ function isSchemaMissingError(message: string | undefined) {
 
 function normalizeRole(email: string | null | undefined) {
   return isAdminEmail(email) ? 'admin' : 'user';
+}
+
+async function resolveProfileId(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  email: string,
+  preferWidgetAlias: boolean
+) {
+  const normalized = email.trim().toLowerCase();
+  const candidates = [normalized, widgetEmail(normalized)];
+
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('id, email')
+    .in('email', candidates)
+    .limit(1)
+    .maybeSingle();
+
+  if (existing?.id) return existing.id;
+
+  const profileEmail = preferWidgetAlias ? widgetEmail(normalized) : normalized;
+  const fullName = normalized.split('@')[0] || 'operator';
+  const { data: created, error } = await supabase
+    .from('profiles')
+    .insert({ email: profileEmail, full_name: fullName })
+    .select('id')
+    .single();
+
+  if (error || !created?.id) {
+    throw new Error('Unable to resolve profile for comment author.');
+  }
+
+  return created.id;
 }
 
 export async function GET(_request: Request, context: { params: { id: string } }) {
@@ -116,10 +153,18 @@ export async function POST(request: Request, context: { params: { id: string } }
     return NextResponse.json({ error: 'Feedback not found.' }, { status: 404 });
   }
 
+  let authorProfileId: string;
+  try {
+    authorProfileId = await resolveProfileId(supabase, actorEmail, !authEmail);
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : 'Unable to resolve comment author.' }, { status: 500 });
+  }
+
   const { data: created, error: commentError } = await supabase
     .from('feedback_comments')
     .insert({
       feedback_id: context.params.id,
+      user_id: authorProfileId,
       author_email: actorEmail,
       author_role: normalizeRole(authEmail || submittedEmail),
       body: commentBody,
