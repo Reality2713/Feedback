@@ -18,6 +18,7 @@ This app is the new app-first rewrite bootstrap for Preflight roadmap/feedback.
 - `PREFLIGHT_PROJECT_SLUG` (optional, defaults to `preflight`)
 - `SUPABASE_STORAGE_BUCKET` (optional, defaults to `feedback-attachments`)
 - `MAX_ATTACHMENT_MB` (optional, defaults to `8`)
+- `ADMIN_EMAILS` (optional, comma-separated list of admin emails for status controls)
 
 ## Next milestones
 

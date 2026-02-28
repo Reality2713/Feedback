@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createSupabaseAdminClient } from '@/lib/supabase-admin';
-import { parseSort, sortFeedback } from '@/lib/feedback';
+import { normalizeStatus, parseSort, parseStatusFilter, sortFeedback } from '@/lib/feedback';
 import { buildFeedbackContent, parseFeedbackContent } from '@/lib/feedback-content';
 
 type FeedbackPayload = {
@@ -141,6 +141,7 @@ export async function GET(request: Request) {
   const projectSlug = process.env.PREFLIGHT_PROJECT_SLUG || 'preflight';
   const requestUrl = new URL(request.url);
   const sort = parseSort(requestUrl.searchParams.get('sort'));
+  const statusFilter = parseStatusFilter(requestUrl.searchParams.get('status'));
 
   let supabase;
   try {
@@ -159,10 +160,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Target project was not found.' }, { status: 404 });
   }
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('feedback')
     .select('id, created_at, title, description, status, upvotes')
     .eq('project_id', project.id);
+
+  if (statusFilter.length > 0) {
+    query = query.in('status', statusFilter);
+  }
+
+  const { data, error } = await query;
 
   if (error || !data) {
     return NextResponse.json({ error: error?.message || 'Failed to load feedback.' }, { status: 500 });
@@ -173,6 +180,7 @@ export async function GET(request: Request) {
     return {
       ...row,
       upvotes: Number(row.upvotes || 0),
+      status: normalizeStatus(row.status),
       description: parsed.body || row.description,
       preview: parsed.preview,
       type: parsed.type,

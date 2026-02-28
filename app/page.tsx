@@ -2,18 +2,23 @@ import Link from 'next/link';
 import { FeedbackForm } from '@/components/feedback-form';
 import { FeedbackBoard } from '@/components/feedback-board';
 import { ProfileMenu } from '@/components/profile-menu';
+import { RoadmapBoard } from '@/components/roadmap-board';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
+import { isAdminEmail } from '@/lib/admin';
 
 export default async function HomePage() {
   let userEmail: string | null = null;
+  let userIsAdmin = false;
   try {
     const supabase = createSupabaseServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     userEmail = user?.email ?? null;
+    userIsAdmin = isAdminEmail(userEmail);
   } catch {
     userEmail = null;
+    userIsAdmin = false;
   }
 
   return (
@@ -76,9 +81,10 @@ export default async function HomePage() {
                 </div>
               )}
               <div className='status-board-shell'>
-                <FeedbackBoard embedded />
+                <FeedbackBoard embedded isAdmin={userIsAdmin} />
               </div>
             </div>
+            <RoadmapBoard />
           </div>
         </section>
       </main>

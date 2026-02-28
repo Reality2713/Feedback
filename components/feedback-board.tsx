@@ -19,11 +19,18 @@ type FeedbackItem = {
 
 type FeedbackBoardProps = {
   embedded?: boolean;
+  isAdmin?: boolean;
 };
 
 const SORTS: SortMode[] = ['new', 'popular', 'trending'];
+const STATUSES = [
+  { value: 'open', label: 'NEW' },
+  { value: 'planned', label: 'PLANNED' },
+  { value: 'in_progress', label: 'IN_PROGRESS' },
+  { value: 'shipped', label: 'SHIPPED' },
+] as const;
 
-export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
+export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [sort, setSort] = useState<SortMode>('new');
   const [loading, setLoading] = useState(false);
@@ -31,6 +38,7 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
   const [voting, setVoting] = useState<Record<string, boolean>>({});
   const [voted, setVoted] = useState<string[]>([]);
   const [activeItem, setActiveItem] = useState<FeedbackItem | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   async function loadFeedback(currentSort: SortMode, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
@@ -101,6 +109,32 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
     }
   }
 
+  async function updateStatus(id: string, status: string) {
+    setUpdatingStatus(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/feedback/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to update status');
+      }
+
+      setItems((current) => current.map((item) => (item.id === id ? { ...item, status: status as FeedbackItem['status'] } : item)));
+      setActiveItem((current) => (current && current.id === id ? { ...current, status: status as FeedbackItem['status'] } : current));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('feedback:status-updated'));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }
+
   const wrapperClass = embedded ? 'board-card embedded' : 'pf-card board-card';
 
   return (
@@ -162,8 +196,25 @@ export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
 
             <p className='board-modal-meta'>
               {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
-              {activeItem.priority || 'MEDIUM'}
+              {activeItem.priority || 'MEDIUM'} · {activeItem.status === 'open' ? 'NEW' : activeItem.status?.toUpperCase()}
             </p>
+
+            {isAdmin ? (
+              <div className='board-modal-controls'>
+                <label className='pf-label'>WORKFLOW_STATUS</label>
+                <select
+                  className='pf-input'
+                  value={activeItem.status || 'open'}
+                  onChange={(event) => updateStatus(activeItem.id, event.target.value)}
+                  disabled={updatingStatus}>
+                  {STATUSES.map((status) => (
+                    <option key={status.value} value={status.value}>
+                      {status.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : null}
             <pre className='board-modal-body'>{activeItem.description}</pre>
 
             {activeItem.attachments && activeItem.attachments.length > 0 ? (
