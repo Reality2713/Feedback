@@ -13,9 +13,13 @@ type FeedbackItem = {
   upvotes: number;
 };
 
+type FeedbackBoardProps = {
+  embedded?: boolean;
+};
+
 const SORTS: SortMode[] = ['new', 'popular', 'trending'];
 
-export function FeedbackBoard() {
+export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [sort, setSort] = useState<SortMode>('new');
   const [loading, setLoading] = useState(false);
@@ -79,8 +83,10 @@ export function FeedbackBoard() {
     }
   }
 
+  const wrapperClass = embedded ? 'board-card embedded' : 'pf-card board-card';
+
   return (
-    <section className='pf-card board-card'>
+    <section className={wrapperClass}>
       <div className='board-header'>
         <h3>MISSION BOARD</h3>
         <div className='sort-tabs'>

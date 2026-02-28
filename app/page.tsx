@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { FeedbackForm } from '@/components/feedback-form';
 import { FeedbackBoard } from '@/components/feedback-board';
+import { ProfileMenu } from '@/components/profile-menu';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 
 export default async function HomePage() {
@@ -47,7 +48,10 @@ export default async function HomePage() {
 
           <div className='right-col'>
             <div className='pf-card status-card'>
-              <div className='status-pill'>DPT_LOG_v3.0</div>
+              <div className='status-head'>
+                <div className='status-pill'>DPT_LOG_v3.0</div>
+                {userEmail ? <ProfileMenu email={userEmail} /> : null}
+              </div>
               <h2 className='status-title'>
                 MISSION
                 <br />
@@ -64,13 +68,17 @@ export default async function HomePage() {
                 <span>ACCESS_ROADMAP_BOARD</span>
                 <span>→</span>
               </Link>
-              <div className='home-auth-links'>
-                <Link href='/auth/login'>Login</Link>
-                <span>·</span>
-                <Link href='/auth/signup'>Register</Link>
+              {userEmail ? null : (
+                <div className='home-auth-links'>
+                  <Link href='/auth/login'>Login</Link>
+                  <span>·</span>
+                  <Link href='/auth/signup'>Register</Link>
+                </div>
+              )}
+              <div className='status-board-shell'>
+                <FeedbackBoard embedded />
               </div>
             </div>
-            <FeedbackBoard />
           </div>
         </section>
       </main>

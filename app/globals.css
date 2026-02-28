@@ -217,6 +217,13 @@ body {
   gap: 1.2rem;
 }
 
+.status-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
 .status-pill {
   justify-self: end;
   opacity: 0.6;
@@ -260,9 +267,20 @@ body {
   gap: 1rem;
 }
 
+.status-board-shell {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 1rem;
+}
+
 .board-card {
   display: grid;
   gap: 1rem;
+}
+
+.board-card.embedded {
+  padding: 0;
+  background: transparent;
+  border: 0;
 }
 
 .board-header {
@@ -302,6 +320,9 @@ body {
 .board-list {
   display: grid;
   gap: 0.7rem;
+  max-height: min(46vh, 420px);
+  overflow: auto;
+  padding-right: 0.2rem;
 }
 
 .board-item {
@@ -367,6 +388,65 @@ body {
   text-decoration: none;
 }
 
+.profile-menu {
+  position: relative;
+}
+
+.profile-trigger {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.36rem 0.5rem;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-trigger::-webkit-details-marker {
+  display: none;
+}
+
+.profile-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--pf-green);
+  box-shadow: 0 0 0 4px rgba(61, 170, 84, 0.2);
+}
+
+.profile-panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 150px;
+  background: #090e1f;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  z-index: 10;
+  display: grid;
+}
+
+.profile-link {
+  text-align: left;
+  border: 0;
+  padding: 0.6rem 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  background: transparent;
+  color: var(--pf-cream);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-link:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 .auth-page {
   min-height: 100vh;
   width: 100%;
@@ -429,5 +509,9 @@ body {
 
   .two-col {
     grid-template-columns: 1fr;
+  }
+
+  .board-list {
+    max-height: 380px;
   }
 }
