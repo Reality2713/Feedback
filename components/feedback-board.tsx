@@ -55,6 +55,8 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [activeItem, setActiveItem] = useState<FeedbackItem | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   async function loadFeedback(currentSort: SortMode, currentStatus: StatusFilter, onSuccess?: (items: FeedbackItem[]) => void) {
     setLoading(true);
@@ -86,6 +88,14 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+    const reportId = new URLSearchParams(window.location.search).get('report');
+    if (!reportId) return;
+    const target = items.find((item) => item.id === reportId);
+    if (target) setActiveItem(target);
+  }, [items, mounted]);
+
+  useEffect(() => {
     let cancelled = false;
     loadFeedback(sort, statusFilter, (nextItems) => {
       if (!cancelled) setItems(nextItems);
@@ -108,7 +118,12 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
   useEffect(() => {
     function onEscape(event: KeyboardEvent) {
-      if (event.key === 'Escape') setActiveItem(null);
+      if (event.key !== 'Escape') return;
+      if (lightboxUrl) {
+        setLightboxUrl(null);
+        return;
+      }
+      setActiveItem(null);
     }
 
     if (activeItem) {
@@ -117,7 +132,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
         window.removeEventListener('keydown', onEscape);
       };
     }
-  }, [activeItem]);
+  }, [activeItem, lightboxUrl]);
 
   const votedIds = useMemo(() => new Set(voted), [voted]);
   const visibleItems = useMemo(() => {
@@ -182,6 +197,32 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
     }
   }
 
+  function openItem(item: FeedbackItem) {
+    setActiveItem(item);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('report', item.id);
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  function closeItem() {
+    setActiveItem(null);
+    setCopied(false);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('report');
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  async function copyReportLink() {
+    if (!activeItem || typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('report', activeItem.id);
+    await navigator.clipboard.writeText(url.toString());
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
   const wrapperClass = embedded ? 'board-card embedded' : 'pf-card board-card';
 
   return (
@@ -228,7 +269,7 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
         {visibleItems.map((item) => (
           <article key={item.id} className='board-item'>
             <div className='board-item-head'>
-              <button type='button' className='board-open' onClick={() => setActiveItem(item)}>
+              <button type='button' className='board-open' onClick={() => openItem(item)}>
                 <h4>{item.title}</h4>
               </button>
               <button
@@ -253,13 +294,18 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
       {mounted && activeItem
         ? createPortal(
-            <div className='board-modal-backdrop' onClick={() => setActiveItem(null)}>
+            <div className='board-modal-backdrop' onClick={closeItem}>
               <div className='board-modal' onClick={(event) => event.stopPropagation()}>
                 <div className='board-modal-head'>
                   <h4>{activeItem.title}</h4>
-                  <button type='button' className='modal-close' onClick={() => setActiveItem(null)}>
-                    CLOSE
-                  </button>
+                  <div className='board-modal-actions'>
+                    <button type='button' className='modal-close' onClick={copyReportLink}>
+                      {copied ? 'COPIED' : 'COPY_LINK'}
+                    </button>
+                    <button type='button' className='modal-close' onClick={closeItem}>
+                      CLOSE
+                    </button>
+                  </div>
                 </div>
 
                 <p className='board-modal-meta'>
@@ -297,13 +343,22 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
                 {activeItem.attachments && activeItem.attachments.length > 0 ? (
                   <div className='board-gallery'>
                     {activeItem.attachments.map((url) => (
-                      <a key={url} href={url} target='_blank' rel='noreferrer' className='board-gallery-link'>
+                      <button key={url} type='button' className='board-gallery-link' onClick={() => setLightboxUrl(url)}>
                         <img src={url} alt='Feedback attachment' className='board-gallery-image' loading='lazy' />
-                      </a>
+                      </button>
                     ))}
                   </div>
                 ) : null}
               </div>
+            </div>,
+            document.body
+          )
+        : null}
+
+      {mounted && lightboxUrl
+        ? createPortal(
+            <div className='board-lightbox' onClick={() => setLightboxUrl(null)}>
+              <img src={lightboxUrl} alt='Feedback attachment full size' className='board-lightbox-image' />
             </div>,
             document.body
           )

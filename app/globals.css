@@ -541,6 +541,12 @@ body {
   gap: 0.8rem;
 }
 
+.board-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .board-modal-head h4 {
   margin: 0;
   font-size: 1.45rem;
@@ -674,6 +680,9 @@ body {
   display: block;
   border: 1px solid rgba(255, 255, 255, 0.14);
   overflow: hidden;
+  padding: 0;
+  background: transparent;
+  cursor: zoom-in;
 }
 
 .board-gallery-image {
@@ -681,6 +690,24 @@ body {
   aspect-ratio: 4 / 3;
   object-fit: cover;
   display: block;
+}
+
+.board-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 75;
+  background: rgba(0, 0, 0, 0.88);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  cursor: zoom-out;
+}
+
+.board-lightbox-image {
+  max-width: min(1200px, 96vw);
+  max-height: 92vh;
+  object-fit: contain;
+  border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .home-auth-links {
