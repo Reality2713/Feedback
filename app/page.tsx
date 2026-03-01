@@ -4,21 +4,17 @@ import { FeedbackBoard } from '@/components/feedback-board';
 import { ProfileMenu } from '@/components/profile-menu';
 import { RoadmapBoard } from '@/components/roadmap-board';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { isAdminEmail } from '@/lib/admin';
 
 export default async function HomePage() {
   let userEmail: string | null = null;
-  let userIsAdmin = false;
   try {
     const supabase = createSupabaseServerClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     userEmail = user?.email ?? null;
-    userIsAdmin = isAdminEmail(userEmail);
   } catch {
     userEmail = null;
-    userIsAdmin = false;
   }
 
   return (
@@ -48,7 +44,7 @@ export default async function HomePage() {
         <section className='content-grid'>
           <div className='left-col'>
             <h2 className='section-title'>FILE NEW REPORT</h2>
-            <FeedbackForm userEmail={userEmail} isAdmin={userIsAdmin} />
+            <FeedbackForm userEmail={userEmail} isAdmin={false} />
           </div>
 
           <div className='right-col'>
@@ -82,7 +78,7 @@ export default async function HomePage() {
               )}
               <div className='status-board-shell'>
                 <p className='panel-subtitle'>LIVE_FEEDBACK</p>
-                <FeedbackBoard embedded isAdmin={userIsAdmin} />
+                <FeedbackBoard embedded />
                 <div className='pipeline-divider' />
                 <p className='panel-subtitle'>DELIVERY_ROADMAP</p>
                 <RoadmapBoard embedded />

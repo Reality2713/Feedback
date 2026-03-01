@@ -1145,6 +1145,17 @@ summary:focus-visible {
   font-size: 0.9rem;
 }
 
+.dashboard-item-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(239, 120, 22, 0.65);
+  text-underline-offset: 2px;
+}
+
+.dashboard-item-link:hover {
+  text-decoration-color: rgba(239, 120, 22, 0.95);
+}
+
 .dashboard-item p {
   margin: 0;
   font-size: 0.78rem;

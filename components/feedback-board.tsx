@@ -25,7 +25,6 @@ type FeedbackItem = {
 
 type FeedbackBoardProps = {
   embedded?: boolean;
-  isAdmin?: boolean;
 };
 
 const SORTS: SortMode[] = ['new', 'popular', 'trending'];
@@ -36,13 +35,6 @@ const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'in_progress', label: 'IN_PROGRESS' },
   { value: 'shipped', label: 'SHIPPED' },
 ];
-const STATUSES = [
-  { value: 'open', label: 'NEW' },
-  { value: 'planned', label: 'PLANNED' },
-  { value: 'in_progress', label: 'IN_PROGRESS' },
-  { value: 'shipped', label: 'SHIPPED' },
-] as const;
-
 function statusLabel(status: string | null | undefined) {
   if (status === 'open' || !status) return 'NEW';
   return status.toUpperCase();
@@ -55,7 +47,7 @@ function trimPreview(item: FeedbackItem) {
   return clean.length > 170 ? `${clean.slice(0, 170)}...` : clean;
 }
 
-export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoardProps) {
+export function FeedbackBoard({ embedded = false }: FeedbackBoardProps) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [sort, setSort] = useState<SortMode>('new');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -65,7 +57,6 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
   const [voting, setVoting] = useState<Record<string, boolean>>({});
   const [voted, setVoted] = useState<string[]>([]);
   const [activeItem, setActiveItem] = useState<FeedbackItem | null>(null);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [copied, setCopied] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -193,32 +184,6 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
       setError(err instanceof Error ? err.message : 'Vote failed');
     } finally {
       setVoting((state) => ({ ...state, [id]: false }));
-    }
-  }
-
-  async function updateStatus(id: string, status: string) {
-    setUpdatingStatus(true);
-    setError('');
-    try {
-      const response = await fetch(`/api/feedback/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
-        throw new Error(data.error || 'Failed to update status');
-      }
-
-      setItems((current) => current.map((item) => (item.id === id ? { ...item, status: status as FeedbackItem['status'] } : item)));
-      setActiveItem((current) => (current && current.id === id ? { ...current, status: status as FeedbackItem['status'] } : current));
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('feedback:status-updated'));
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update status');
-    } finally {
-      setUpdatingStatus(false);
     }
   }
 
@@ -393,32 +358,8 @@ export function FeedbackBoard({ embedded = false, isAdmin = false }: FeedbackBoa
 
                 <p className='board-modal-meta'>
                   {new Date(activeItem.created_at).toLocaleString()} · {activeItem.type || 'FEATURE_REQUEST'} ·{' '}
-                  {activeItem.priority || 'MEDIUM'} {isAdmin ? `· ${activeItem.source || 'web'} ` : ''}·{' '}
-                  {statusLabel(activeItem.status)}
+                  {activeItem.priority || 'MEDIUM'} · {statusLabel(activeItem.status)}
                 </p>
-                {isAdmin && activeItem.reference ? (
-                  <a href={activeItem.reference} target='_blank' rel='noreferrer' className='board-reference-link'>
-                    SOURCE_REFERENCE ↗
-                  </a>
-                ) : null}
-
-                <div className='board-modal-controls'>
-                  <div className='board-modal-controls-head'>
-                    <label className='pf-label'>WORKFLOW_STATUS</label>
-                    {!isAdmin ? <span className='admin-lock'>ADMIN ONLY</span> : null}
-                  </div>
-                  <select
-                    className='pf-input'
-                    value={activeItem.status || 'open'}
-                    onChange={(event) => updateStatus(activeItem.id, event.target.value)}
-                    disabled={updatingStatus || !isAdmin}>
-                    {STATUSES.map((status) => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div className='board-modal-body markdown-preview'>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeItem.description}</ReactMarkdown>
                 </div>

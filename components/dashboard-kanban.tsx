@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 type WorkflowStatus = 'open' | 'planned' | 'in_progress' | 'shipped';
@@ -153,7 +154,11 @@ export function DashboardKanban({ isAdmin }: DashboardKanbanProps) {
             <div className='dashboard-items'>
               {lane.items.map((item) => (
                 <article key={item.id} className='dashboard-item'>
-                  <h4>{item.title}</h4>
+                  <h4>
+                    <Link href={`/dashboard/report/${item.id}`} className='dashboard-item-link'>
+                      {item.title}
+                    </Link>
+                  </h4>
                   <p>{item.preview || 'No preview available.'}</p>
                   <div className='dashboard-item-meta'>
                     <span>▲ {item.upvotes}</span>
@@ -165,6 +170,9 @@ export function DashboardKanban({ isAdmin }: DashboardKanbanProps) {
                         ref↗
                       </a>
                     ) : null}
+                    <Link href={`/report/${item.id}`} className='dashboard-ref-link'>
+                      public↗
+                    </Link>
                   </div>
                   <select
                     className='pf-input'

@@ -12,6 +12,8 @@ type FeedbackItem = {
   description: string;
   type?: string;
   priority?: string;
+  source?: string;
+  reference?: string;
   status: string | null;
   upvotes: number;
   attachments?: string[];
@@ -57,6 +59,7 @@ export function ReportDetailView({ id, currentUserEmail = null, isAdmin = false 
   const [preferenceLoading, setPreferenceLoading] = useState(false);
   const [preferenceMessage, setPreferenceMessage] = useState('');
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -184,6 +187,29 @@ export function ReportDetailView({ id, currentUserEmail = null, isAdmin = false 
     }
   }
 
+  async function updateStatus(nextStatus: 'open' | 'planned' | 'in_progress' | 'shipped') {
+    if (!item || !isAdmin || updatingStatus) return;
+    setUpdatingStatus(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/feedback/${item.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to update status');
+      }
+      setItem((current) => (current ? { ...current, status: nextStatus } : current));
+      window.dispatchEvent(new CustomEvent('feedback:status-updated'));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  }
+
   async function copyLink() {
     if (typeof window === 'undefined') return;
     await navigator.clipboard.writeText(window.location.href);
@@ -288,6 +314,33 @@ export function ReportDetailView({ id, currentUserEmail = null, isAdmin = false 
         {new Date(item.created_at).toLocaleString()} · {item.type || 'FEATURE_REQUEST'} · {item.priority || 'MEDIUM'} ·{' '}
         {item.status === 'open' ? 'NEW' : item.status?.toUpperCase()}
       </p>
+
+      {isAdmin ? (
+        <section className='board-modal-controls' aria-label='Admin moderation controls'>
+          <div className='board-modal-controls-head'>
+            <label className='pf-label'>WORKFLOW_STATUS</label>
+            <span className='admin-lock'>ADMIN CONTROL</span>
+          </div>
+          <select
+            className='pf-input'
+            value={item.status || 'open'}
+            disabled={updatingStatus}
+            onChange={(event) => updateStatus(event.target.value as 'open' | 'planned' | 'in_progress' | 'shipped')}>
+            <option value='open'>NEW</option>
+            <option value='planned'>PLANNED</option>
+            <option value='in_progress'>IN_PROGRESS</option>
+            <option value='shipped'>SHIPPED</option>
+          </select>
+          <div className='dashboard-item-meta'>
+            <span>{(item.source || 'web').toUpperCase()}</span>
+            {item.reference ? (
+              <a href={item.reference} target='_blank' rel='noreferrer' className='dashboard-ref-link'>
+                SOURCE_REFERENCE ↗
+              </a>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <div className='board-modal-body markdown-preview report-body'>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{item.description}</ReactMarkdown>
