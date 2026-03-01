@@ -39,9 +39,15 @@ type ReportDetailViewProps = {
   id: string;
   currentUserEmail?: string | null;
   isAdmin?: boolean;
+  canAccessAdmin?: boolean;
 };
 
-export function ReportDetailView({ id, currentUserEmail = null, isAdmin = false }: ReportDetailViewProps) {
+export function ReportDetailView({
+  id,
+  currentUserEmail = null,
+  isAdmin = false,
+  canAccessAdmin = false,
+}: ReportDetailViewProps) {
   const [item, setItem] = useState<FeedbackItem | null>(null);
   const [allItems, setAllItems] = useState<FeedbackItem[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -298,6 +304,11 @@ export function ReportDetailView({ id, currentUserEmail = null, isAdmin = false 
           BACK
         </Link>
         <div className='report-actions'>
+          {canAccessAdmin ? (
+            <Link href={isAdmin ? `/report/${id}` : `/dashboard/report/${id}`} className='modal-close report-context-link'>
+              {isAdmin ? 'OPEN_PUBLIC_VIEW' : 'OPEN_ADMIN_VIEW'}
+            </Link>
+          ) : null}
           <button type='button' className='modal-close' onClick={copyLink}>
             {copied ? 'COPIED' : 'COPY_LINK'}
           </button>

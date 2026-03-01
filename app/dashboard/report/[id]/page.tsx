@@ -25,7 +25,7 @@ export default async function DashboardReportPage({ params }: DashboardReportPag
 
   return (
     <main id='main-content' className='report-page'>
-      <ReportDetailView id={params.id} currentUserEmail={user.email ?? null} isAdmin />
+      <ReportDetailView id={params.id} currentUserEmail={user.email ?? null} isAdmin canAccessAdmin />
     </main>
   );
 }
