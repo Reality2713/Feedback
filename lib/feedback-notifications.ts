@@ -37,10 +37,13 @@ function trimComment(comment: string) {
 async function sendEmail(params: { to: string; subject: string; html: string }) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL;
-  if (!apiKey || !from) return;
+  if (!apiKey || !from) {
+    console.warn('[notify] skipped email: missing RESEND_API_KEY or RESEND_FROM_EMAIL');
+    return;
+  }
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -53,8 +56,12 @@ async function sendEmail(params: { to: string; subject: string; html: string }) 
         html: params.html,
       }),
     });
+    if (!response.ok) {
+      const details = await response.text().catch(() => '');
+      console.error('[notify] resend rejected', response.status, details);
+    }
   } catch {
-    // Notification delivery is best-effort.
+    console.error('[notify] resend request failed');
   }
 }
 
