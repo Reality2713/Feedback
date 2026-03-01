@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createSupabaseAdminClient } from '@/lib/supabase-admin';
 import { getAuthenticatedEmail } from '@/lib/auth-email';
 import { isAdminEmail } from '@/lib/admin';
+import { buildIntakeDedupeKey } from '@/lib/intake';
 
 type IntakePayload = {
   source?: string;
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await supabase
     .from('feedback_intake_events')
-    .select('id, created_at, source, reference_url, reporter_email, event_type, payload, feedback_id')
+    .select('id, created_at, source, reference_url, reporter_email, event_type, payload, feedback_id, dedupe_key, converted_at, converted_by')
     .eq('project_id', project.id)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -107,6 +108,11 @@ export async function POST(request: Request) {
       source,
       reference_url: referenceUrl || null,
       reporter_email: reporterEmail || null,
+      dedupe_key: buildIntakeDedupeKey({
+        source,
+        reporterEmail,
+        title,
+      }),
       event_type: 'manual_capture',
       payload: {
         title,

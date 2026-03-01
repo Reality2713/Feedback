@@ -17,6 +17,9 @@ type IntakeEvent = {
     attachments_count?: number;
   };
   feedback_id?: string | null;
+  dedupe_key?: string | null;
+  converted_at?: string | null;
+  converted_by?: string | null;
 };
 
 export function IntakeFeed() {
@@ -29,6 +32,8 @@ export function IntakeFeed() {
   const [notes, setNotes] = useState('');
   const [reporterEmail, setReporterEmail] = useState('');
   const [referenceUrl, setReferenceUrl] = useState('');
+  const [linkDrafts, setLinkDrafts] = useState<Record<string, string>>({});
+  const [rowBusy, setRowBusy] = useState<Record<string, boolean>>({});
 
   async function load() {
     setLoading(true);
@@ -81,6 +86,47 @@ export function IntakeFeed() {
       setError(err instanceof Error ? err.message : 'Failed to capture intake');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function convertIntake(id: string) {
+    setRowBusy((state) => ({ ...state, [id]: true }));
+    setError('');
+    try {
+      const response = await fetch(`/api/intake/${id}/convert`, { method: 'POST' });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to convert intake');
+      }
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to convert intake');
+    } finally {
+      setRowBusy((state) => ({ ...state, [id]: false }));
+    }
+  }
+
+  async function linkIntake(id: string) {
+    const feedbackId = String(linkDrafts[id] || '').trim();
+    if (!feedbackId) return;
+    setRowBusy((state) => ({ ...state, [id]: true }));
+    setError('');
+    try {
+      const response = await fetch(`/api/intake/${id}/link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ feedback_id: feedbackId }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to link intake');
+      }
+      setLinkDrafts((state) => ({ ...state, [id]: '' }));
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to link intake');
+    } finally {
+      setRowBusy((state) => ({ ...state, [id]: false }));
     }
   }
 
@@ -155,6 +201,7 @@ export function IntakeFeed() {
               <span>{item.payload?.priority || 'MEDIUM'}</span>
               <span>{item.payload?.attachments_count || 0} img</span>
             </div>
+            {item.dedupe_key ? <p className='board-note'>dedupe: {item.dedupe_key}</p> : null}
             <div className='dashboard-item-meta'>
               {item.reporter_email ? <span>{item.reporter_email}</span> : null}
               {item.reference_url ? (
@@ -173,6 +220,34 @@ export function IntakeFeed() {
                 </>
               ) : null}
             </div>
+            {!item.feedback_id ? (
+              <div className='intake-actions'>
+                <button
+                  type='button'
+                  className='modal-close'
+                  disabled={Boolean(rowBusy[item.id])}
+                  onClick={() => convertIntake(item.id)}>
+                  {rowBusy[item.id] ? 'WORKING...' : 'CREATE_FEEDBACK'}
+                </button>
+                <input
+                  className='pf-input'
+                  placeholder='Existing feedback UUID'
+                  value={linkDrafts[item.id] || ''}
+                  onChange={(event) => setLinkDrafts((state) => ({ ...state, [item.id]: event.target.value }))}
+                />
+                <button
+                  type='button'
+                  className='modal-close'
+                  disabled={Boolean(rowBusy[item.id]) || !String(linkDrafts[item.id] || '').trim()}
+                  onClick={() => linkIntake(item.id)}>
+                  LINK_EXISTING
+                </button>
+              </div>
+            ) : (
+              <p className='board-note'>
+                linked at {item.converted_at ? new Date(item.converted_at).toLocaleString() : 'unknown'} by {item.converted_by || 'system'}
+              </p>
+            )}
           </article>
         ))}
         {!loading && items.length === 0 ? <p className='board-note'>No intake events yet.</p> : null}

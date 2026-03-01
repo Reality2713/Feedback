@@ -4,6 +4,7 @@ import { isAdminEmail } from '@/lib/admin';
 import { normalizeStatus, parseSort, parseStatusFilter, sortFeedback } from '@/lib/feedback';
 import { buildFeedbackContent, parseFeedbackContent } from '@/lib/feedback-content';
 import { getAuthenticatedEmail } from '@/lib/auth-email';
+import { buildIntakeDedupeKey } from '@/lib/intake';
 
 type FeedbackPayload = {
   type?: string;
@@ -114,6 +115,11 @@ export async function POST(request: Request) {
     source: isAdmin ? body.source || 'web' : 'web',
     reference_url: isAdmin ? body.reference || null : null,
     reporter_email: effectiveEmail.toLowerCase(),
+    dedupe_key: buildIntakeDedupeKey({
+      source: isAdmin ? body.source || 'web' : 'web',
+      reporterEmail: effectiveEmail.toLowerCase(),
+      title: body.subject,
+    }),
     event_type: 'submission',
     payload: {
       type: body.type || 'FEATURE_REQUEST',
