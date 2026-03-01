@@ -203,6 +203,7 @@ export async function POST(request: Request, context: { params: { id: string } }
         toEmail: recipient,
         feedbackId: feedbackRow.id,
         feedbackTitle: feedbackRow.title,
+        commentId: created.id,
         commentBody,
         actorEmail,
       });

@@ -53,6 +53,7 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
   });
   const [preferenceLoading, setPreferenceLoading] = useState(false);
   const [preferenceMessage, setPreferenceMessage] = useState('');
+  const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -100,6 +101,12 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
   }, [currentUserEmail]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const commentId = new URLSearchParams(window.location.search).get('comment');
+    setHighlightedCommentId(commentId);
+  }, []);
+
+  useEffect(() => {
     async function loadPreferences() {
       const targetEmail = (currentUserEmail || preferenceEmail || '').trim();
       if (!targetEmail) return;
@@ -130,6 +137,13 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
     }
     loadComments();
   }, [id]);
+
+  useEffect(() => {
+    if (!highlightedCommentId) return;
+    const target = document.getElementById(`comment-${highlightedCommentId}`);
+    if (!target) return;
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [comments, highlightedCommentId]);
 
   useEffect(() => {
     function onEscape(event: KeyboardEvent) {
@@ -307,10 +321,14 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
 
       <section className='report-comments' aria-label='Report comments'>
         <p className='pf-label'>COMMENTS</p>
+        {highlightedCommentId ? <p className='board-note'>Focused from notification email.</p> : null}
         <div className='report-comments-list'>
           {comments.length === 0 ? <p className='board-note'>No comments yet.</p> : null}
           {comments.map((comment) => (
-            <article key={comment.id} className='report-comment'>
+            <article
+              id={`comment-${comment.id}`}
+              key={comment.id}
+              className={`report-comment ${highlightedCommentId === comment.id ? 'highlighted' : ''}`}>
               <div className='report-comment-head'>
                 <span className='meta-chip'>{comment.author_role.toUpperCase()}</span>
                 <span>{comment.author_email}</span>

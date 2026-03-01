@@ -11,6 +11,7 @@ type NotifyCommentParams = {
   toEmail: string;
   feedbackId: string;
   feedbackTitle: string;
+  commentId: string;
   commentBody: string;
   actorEmail?: string | null;
 };
@@ -86,7 +87,7 @@ export async function notifyFeedbackStatusChanged(params: NotifyStatusParams) {
 }
 
 export async function notifyFeedbackCommentAdded(params: NotifyCommentParams) {
-  const link = `${appBaseUrl()}/report/${params.feedbackId}`;
+  const link = `${appBaseUrl()}/report/${params.feedbackId}?comment=${params.commentId}`;
   const actor = params.actorEmail || 'Preflight team';
 
   await sendEmail({

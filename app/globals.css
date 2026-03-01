@@ -1294,6 +1294,11 @@ summary:focus-visible {
   gap: 0.45rem;
 }
 
+.report-comment.highlighted {
+  border-color: rgba(239, 120, 22, 0.9);
+  box-shadow: 0 0 0 1px rgba(239, 120, 22, 0.35) inset;
+}
+
 .report-comment-head {
   display: flex;
   align-items: center;
