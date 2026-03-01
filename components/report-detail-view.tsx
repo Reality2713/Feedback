@@ -25,6 +25,13 @@ type CommentItem = {
   body: string;
 };
 
+type NotificationPreferences = {
+  status_updates: boolean;
+  comment_updates: boolean;
+  resolution_updates: boolean;
+  archived_updates: boolean;
+};
+
 type ReportDetailViewProps = {
   id: string;
   currentUserEmail?: string | null;
@@ -37,6 +44,15 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
   const [commentBody, setCommentBody] = useState('');
   const [commentEmail, setCommentEmail] = useState(currentUserEmail || '');
   const [commentLoading, setCommentLoading] = useState(false);
+  const [preferenceEmail, setPreferenceEmail] = useState(currentUserEmail || '');
+  const [preferences, setPreferences] = useState<NotificationPreferences>({
+    status_updates: true,
+    comment_updates: true,
+    resolution_updates: true,
+    archived_updates: true,
+  });
+  const [preferenceLoading, setPreferenceLoading] = useState(false);
+  const [preferenceMessage, setPreferenceMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -80,7 +96,26 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
 
   useEffect(() => {
     setCommentEmail(currentUserEmail || '');
+    setPreferenceEmail(currentUserEmail || '');
   }, [currentUserEmail]);
+
+  useEffect(() => {
+    async function loadPreferences() {
+      const targetEmail = (currentUserEmail || preferenceEmail || '').trim();
+      if (!targetEmail) return;
+      try {
+        const response = await fetch(`/api/feedback/${id}/notification-preferences?email=${encodeURIComponent(targetEmail)}`, {
+          cache: 'no-store',
+        });
+        if (!response.ok) return;
+        const data = (await response.json()) as { preferences?: NotificationPreferences };
+        if (data.preferences) setPreferences(data.preferences);
+      } catch {
+        // keep page usable if preference load fails
+      }
+    }
+    loadPreferences();
+  }, [id, currentUserEmail, preferenceEmail]);
 
   useEffect(() => {
     async function loadComments() {
@@ -163,6 +198,32 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
       setError(err instanceof Error ? err.message : 'Failed to post comment');
     } finally {
       setCommentLoading(false);
+    }
+  }
+
+  async function savePreferences() {
+    const email = (currentUserEmail || preferenceEmail || '').trim();
+    if (!email || preferenceLoading) return;
+    setPreferenceLoading(true);
+    setPreferenceMessage('');
+    try {
+      const response = await fetch(`/api/feedback/${id}/notification-preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: currentUserEmail ? undefined : email,
+          ...preferences,
+        }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to save preferences');
+      }
+      setPreferenceMessage('Notification preferences saved.');
+    } catch (err) {
+      setPreferenceMessage(err instanceof Error ? err.message : 'Failed to save preferences');
+    } finally {
+      setPreferenceLoading(false);
     }
   }
 
@@ -282,6 +343,58 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
             <span>→</span>
           </button>
         </div>
+      </section>
+
+      <section className='report-comments' aria-label='Notification preferences'>
+        <p className='pf-label'>NOTIFICATION_PREFERENCES</p>
+        {currentUserEmail ? null : (
+          <input
+            type='email'
+            className='pf-input'
+            placeholder='your@email.com'
+            value={preferenceEmail}
+            onChange={(event) => setPreferenceEmail(event.target.value)}
+          />
+        )}
+        <div className='prefs-grid'>
+          <label className='pref-option'>
+            <input
+              type='checkbox'
+              checked={preferences.status_updates}
+              onChange={(event) => setPreferences((current) => ({ ...current, status_updates: event.target.checked }))}
+            />
+            <span>Status updates</span>
+          </label>
+          <label className='pref-option'>
+            <input
+              type='checkbox'
+              checked={preferences.comment_updates}
+              onChange={(event) => setPreferences((current) => ({ ...current, comment_updates: event.target.checked }))}
+            />
+            <span>Comment updates</span>
+          </label>
+          <label className='pref-option'>
+            <input
+              type='checkbox'
+              checked={preferences.resolution_updates}
+              onChange={(event) => setPreferences((current) => ({ ...current, resolution_updates: event.target.checked }))}
+            />
+            <span>Resolution updates</span>
+          </label>
+          <label className='pref-option'>
+            <input
+              type='checkbox'
+              checked={preferences.archived_updates}
+              onChange={(event) => setPreferences((current) => ({ ...current, archived_updates: event.target.checked }))}
+            />
+            <span>Archive updates</span>
+          </label>
+        </div>
+        <button type='button' className='pf-button' disabled={preferenceLoading} onClick={savePreferences}>
+          <span>{preferenceLoading ? 'SAVING...' : 'SAVE_PREFERENCES'}</span>
+          <span>→</span>
+        </button>
+        {preferenceMessage ? <p className='board-note'>{preferenceMessage}</p> : null}
       </section>
 
       {lightboxUrl ? (

@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { isAdminEmail } from '@/lib/admin';
 import { normalizeStatus } from '@/lib/feedback';
 import { normalizeProfileEmail, notifyFeedbackStatusChanged } from '@/lib/feedback-notifications';
+import { shouldNotify } from '@/lib/notification-preferences';
 
 type StatusPayload = {
   status?: string;
@@ -79,14 +80,18 @@ export async function PATCH(request: Request, context: { params: { id: string } 
 
   const recipient = normalizeProfileEmail(profile?.email);
   if (recipient && recipient !== normalizeProfileEmail(actorEmail)) {
-    void notifyFeedbackStatusChanged({
-      toEmail: recipient,
-      feedbackId: feedbackRow.id,
-      feedbackTitle: feedbackRow.title,
-      previousStatus: feedbackRow.status,
-      nextStatus,
-      actorEmail,
-    });
+    const event = nextStatus === 'shipped' ? 'resolution' : 'status';
+    const canNotify = await shouldNotify(feedbackRow.id, recipient, event).catch(() => true);
+    if (canNotify) {
+      void notifyFeedbackStatusChanged({
+        toEmail: recipient,
+        feedbackId: feedbackRow.id,
+        feedbackTitle: feedbackRow.title,
+        previousStatus: feedbackRow.status,
+        nextStatus,
+        actorEmail,
+      });
+    }
   }
 
   return NextResponse.json({ success: true, status: nextStatus }, { status: 200 });

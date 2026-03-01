@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase-admin';
 import { getAuthenticatedEmail } from '@/lib/auth-email';
 import { isAdminEmail } from '@/lib/admin';
 import { normalizeProfileEmail, notifyFeedbackCommentAdded } from '@/lib/feedback-notifications';
+import { shouldNotify } from '@/lib/notification-preferences';
 
 type CommentPayload = {
   body?: string;
@@ -196,13 +197,16 @@ export async function POST(request: Request, context: { params: { id: string } }
     .single();
   const recipient = normalizeProfileEmail(profile?.email);
   if (recipient && recipient !== normalizeProfileEmail(actorEmail)) {
-    void notifyFeedbackCommentAdded({
-      toEmail: recipient,
-      feedbackId: feedbackRow.id,
-      feedbackTitle: feedbackRow.title,
-      commentBody,
-      actorEmail,
-    });
+    const canNotify = await shouldNotify(feedbackRow.id, recipient, 'comment').catch(() => true);
+    if (canNotify) {
+      void notifyFeedbackCommentAdded({
+        toEmail: recipient,
+        feedbackId: feedbackRow.id,
+        feedbackTitle: feedbackRow.title,
+        commentBody,
+        actorEmail,
+      });
+    }
   }
 
   return NextResponse.json(

@@ -1316,6 +1316,27 @@ summary:focus-visible {
   gap: 0.5rem;
 }
 
+.prefs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.pref-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.45rem 0.55rem;
+  font-size: 0.84rem;
+}
+
+.pref-option input {
+  width: 16px;
+  height: 16px;
+}
+
 @media (max-width: 960px) {
   .pf-spine {
     display: none;
@@ -1363,6 +1384,10 @@ summary:focus-visible {
   }
 
   .report-related-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prefs-grid {
     grid-template-columns: 1fr;
   }
 
