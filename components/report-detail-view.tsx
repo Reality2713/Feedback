@@ -22,6 +22,7 @@ type CommentItem = {
   created_at: string;
   author_email: string;
   author_role: 'user' | 'admin' | 'system';
+  visibility?: 'public' | 'internal';
   body: string;
 };
 
@@ -35,14 +36,16 @@ type NotificationPreferences = {
 type ReportDetailViewProps = {
   id: string;
   currentUserEmail?: string | null;
+  isAdmin?: boolean;
 };
 
-export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailViewProps) {
+export function ReportDetailView({ id, currentUserEmail = null, isAdmin = false }: ReportDetailViewProps) {
   const [item, setItem] = useState<FeedbackItem | null>(null);
   const [allItems, setAllItems] = useState<FeedbackItem[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentBody, setCommentBody] = useState('');
   const [commentEmail, setCommentEmail] = useState(currentUserEmail || '');
+  const [commentVisibility, setCommentVisibility] = useState<'public' | 'internal'>('public');
   const [commentLoading, setCommentLoading] = useState(false);
   const [preferenceEmail, setPreferenceEmail] = useState(currentUserEmail || '');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
@@ -199,6 +202,7 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
         body: JSON.stringify({
           body: commentBody.trim(),
           email: currentUserEmail ? undefined : commentEmail.trim(),
+          visibility: isAdmin ? commentVisibility : 'public',
         }),
       });
       if (!response.ok) {
@@ -208,6 +212,7 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
       const data = (await response.json()) as { item: CommentItem };
       setComments((current) => [...current, data.item]);
       setCommentBody('');
+      if (isAdmin) setCommentVisibility('public');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to post comment');
     } finally {
@@ -331,6 +336,7 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
               className={`report-comment ${highlightedCommentId === comment.id ? 'highlighted' : ''}`}>
               <div className='report-comment-head'>
                 <span className='meta-chip'>{comment.author_role.toUpperCase()}</span>
+                {comment.visibility === 'internal' ? <span className='meta-chip'>INTERNAL</span> : null}
                 <span>{comment.author_email}</span>
                 <span>·</span>
                 <time dateTime={comment.created_at}>{new Date(comment.created_at).toLocaleString()}</time>
@@ -356,6 +362,15 @@ export function ReportDetailView({ id, currentUserEmail = null }: ReportDetailVi
             value={commentBody}
             onChange={(event) => setCommentBody(event.target.value)}
           />
+          {isAdmin ? (
+            <select
+              className='pf-input'
+              value={commentVisibility}
+              onChange={(event) => setCommentVisibility(event.target.value as 'public' | 'internal')}>
+              <option value='public'>PUBLIC_COMMENT</option>
+              <option value='internal'>INTERNAL_NOTE</option>
+            </select>
+          ) : null}
           <button type='button' className='pf-button' disabled={commentLoading} onClick={submitComment}>
             <span>{commentLoading ? 'POSTING...' : 'POST_COMMENT'}</span>
             <span>→</span>

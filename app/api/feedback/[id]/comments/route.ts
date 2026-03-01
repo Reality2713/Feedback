@@ -8,6 +8,7 @@ import { shouldNotify } from '@/lib/notification-preferences';
 type CommentPayload = {
   body?: string;
   email?: string;
+  visibility?: 'public' | 'internal';
 };
 
 function widgetEmail(email: string) {
@@ -22,6 +23,7 @@ function isSchemaMissingError(message: string | undefined) {
     text.includes('column "user_id" does not exist') ||
     text.includes('column "author_email" does not exist') ||
     text.includes('column "author_role" does not exist') ||
+    text.includes('column "visibility" does not exist') ||
     text.includes('column "body" does not exist') ||
     text.includes('column "content" does not exist')
   );
@@ -66,6 +68,9 @@ async function resolveProfileId(
 export async function GET(_request: Request, context: { params: { id: string } }) {
   const projectSlug = process.env.PREFLIGHT_PROJECT_SLUG || 'preflight';
 
+  const authEmail = await getAuthenticatedEmail().catch(() => null);
+  const isAdmin = isAdminEmail(authEmail);
+
   let supabase;
   try {
     supabase = createSupabaseAdminClient();
@@ -92,23 +97,25 @@ export async function GET(_request: Request, context: { params: { id: string } }
     return NextResponse.json({ error: 'Feedback not found.' }, { status: 404 });
   }
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('feedback_comments')
-    .select('id, created_at, author_email, author_role, body, content')
+    .select('id, created_at, author_email, author_role, visibility, body, content')
     .eq('feedback_id', context.params.id)
     .order('created_at', { ascending: true });
+  const scopedQuery = isAdmin ? query : query.eq('visibility', 'public');
+  const { data: scopedData, error: scopedError } = await scopedQuery;
 
-  if (error) {
-    if (isSchemaMissingError(error.message)) {
+  if (scopedError) {
+    if (isSchemaMissingError(scopedError.message)) {
       return NextResponse.json(
         { error: 'Comments schema missing. Run supabase/migrations/20260228_feedback_comments.sql first.' },
         { status: 500 }
       );
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: scopedError.message }, { status: 500 });
   }
 
-  const items = (data || []).map((item) => ({
+  const items = (scopedData || []).map((item) => ({
     ...item,
     body: item.body || item.content || '',
   }));
@@ -167,6 +174,8 @@ export async function POST(request: Request, context: { params: { id: string } }
     return NextResponse.json({ error: err instanceof Error ? err.message : 'Unable to resolve comment author.' }, { status: 500 });
   }
 
+  const visibility = body?.visibility === 'internal' && isAdminEmail(authEmail) ? 'internal' : 'public';
+
   const { data: created, error: commentError } = await supabase
     .from('feedback_comments')
     .insert({
@@ -174,10 +183,11 @@ export async function POST(request: Request, context: { params: { id: string } }
       user_id: authorProfileId,
       author_email: actorEmail,
       author_role: normalizeRole(authEmail || submittedEmail),
+      visibility,
       body: commentBody,
       content: commentBody,
     })
-    .select('id, created_at, author_email, author_role, body, content')
+    .select('id, created_at, author_email, author_role, visibility, body, content')
     .single();
 
   if (commentError || !created) {
@@ -196,7 +206,7 @@ export async function POST(request: Request, context: { params: { id: string } }
     .eq('id', feedbackRow.user_id)
     .single();
   const recipient = normalizeProfileEmail(profile?.email);
-  if (recipient && recipient !== normalizeProfileEmail(actorEmail)) {
+  if (visibility === 'public' && recipient && recipient !== normalizeProfileEmail(actorEmail)) {
     const canNotify = await shouldNotify(feedbackRow.id, recipient, 'comment').catch(() => true);
     if (canNotify) {
       void notifyFeedbackCommentAdded({
