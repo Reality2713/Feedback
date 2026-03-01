@@ -37,3 +37,4 @@ Run this SQL in Supabase SQL Editor before using comments:
 
 - `supabase/migrations/20260228_feedback_comments.sql`
 - `supabase/migrations/20260301_feedback_notification_preferences.sql`
+- `supabase/migrations/202603020001_feedback_intake_events.sql`

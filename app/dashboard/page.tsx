@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { SignOutButton } from '@/components/sign-out-button';
 import { DashboardKanban } from '@/components/dashboard-kanban';
+import { IntakeFeed } from '@/components/intake-feed';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { isAdminEmail } from '@/lib/admin';
 
@@ -37,6 +38,7 @@ export default async function DashboardPage() {
           </div>
         </div>
         <DashboardKanban isAdmin={isAdmin} />
+        {isAdmin ? <IntakeFeed /> : null}
       </section>
     </main>
   );

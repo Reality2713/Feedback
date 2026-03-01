@@ -91,17 +91,38 @@ export async function POST(request: Request) {
     attachments
   );
 
-  const { error: insertError } = await supabase.from('feedback').insert({
-    title: body.subject,
-    description: content,
-    project_id: project.id,
-    user_id: userId,
-    status: 'open',
-  });
+  const { data: createdFeedback, error: insertError } = await supabase
+    .from('feedback')
+    .insert({
+      title: body.subject,
+      description: content,
+      project_id: project.id,
+      user_id: userId,
+      status: 'open',
+    })
+    .select('id')
+    .single();
 
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  // Intake trail is best-effort and should not block user submissions.
+  void supabase.from('feedback_intake_events').insert({
+    project_id: project.id,
+    feedback_id: createdFeedback?.id || null,
+    source: isAdmin ? body.source || 'web' : 'web',
+    reference_url: isAdmin ? body.reference || null : null,
+    reporter_email: effectiveEmail.toLowerCase(),
+    event_type: 'submission',
+    payload: {
+      type: body.type || 'FEATURE_REQUEST',
+      priority: body.priority || 'MEDIUM',
+      attachments_count: attachments.length,
+      title: body.subject,
+      has_reference: Boolean(body.reference),
+    },
+  });
 
   return NextResponse.json({ success: true }, { status: 200 });
 }
