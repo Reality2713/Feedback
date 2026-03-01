@@ -1332,6 +1332,14 @@ summary:focus-visible {
   gap: 0.5rem;
 }
 
+.intake-capture {
+  display: grid;
+  gap: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0.7rem;
+}
+
 .prefs-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

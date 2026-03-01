@@ -23,6 +23,12 @@ export function IntakeFeed() {
   const [items, setItems] = useState<IntakeEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [source, setSource] = useState('other');
+  const [title, setTitle] = useState('');
+  const [notes, setNotes] = useState('');
+  const [reporterEmail, setReporterEmail] = useState('');
+  const [referenceUrl, setReferenceUrl] = useState('');
 
   async function load() {
     setLoading(true);
@@ -46,6 +52,38 @@ export function IntakeFeed() {
     load();
   }, []);
 
+  async function createManualIntake() {
+    if (!title.trim() || submitting) return;
+    setSubmitting(true);
+    setError('');
+    try {
+      const response = await fetch('/api/intake', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source,
+          title: title.trim(),
+          notes: notes.trim(),
+          reporter_email: reporterEmail.trim(),
+          reference_url: referenceUrl.trim(),
+        }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error || 'Failed to capture intake');
+      }
+      setTitle('');
+      setNotes('');
+      setReporterEmail('');
+      setReferenceUrl('');
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to capture intake');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <section className='pf-card dashboard-card'>
       <div className='dashboard-head'>
@@ -59,6 +97,52 @@ export function IntakeFeed() {
         </button>
       </div>
       {error ? <p className='pf-error'>{error}</p> : null}
+
+      <div className='intake-capture'>
+        <p className='pf-label'>MANUAL_CAPTURE</p>
+        <div className='two-col'>
+          <select className='pf-input' value={source} onChange={(event) => setSource(event.target.value)}>
+            <option value='email'>EMAIL</option>
+            <option value='discord'>DISCORD</option>
+            <option value='x_twitter'>X_TWITTER</option>
+            <option value='slack'>SLACK</option>
+            <option value='other'>OTHER</option>
+          </select>
+          <input
+            className='pf-input'
+            type='email'
+            placeholder='reporter@email.com'
+            value={reporterEmail}
+            onChange={(event) => setReporterEmail(event.target.value)}
+          />
+        </div>
+        <input
+          className='pf-input'
+          type='text'
+          placeholder='Intake title / summary'
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+        />
+        <input
+          className='pf-input'
+          type='url'
+          placeholder='https://source-link...'
+          value={referenceUrl}
+          onChange={(event) => setReferenceUrl(event.target.value)}
+        />
+        <textarea
+          className='pf-input pf-textarea'
+          rows={3}
+          placeholder='Context / notes / original message...'
+          value={notes}
+          onChange={(event) => setNotes(event.target.value)}
+        />
+        <button type='button' className='pf-button' onClick={createManualIntake} disabled={submitting}>
+          <span>{submitting ? 'CAPTURING...' : 'CAPTURE_INTAKE'}</span>
+          <span>→</span>
+        </button>
+      </div>
+
       <div className='dashboard-items'>
         {items.map((item) => (
           <article key={item.id} className='dashboard-item'>
